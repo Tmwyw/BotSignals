@@ -1,5 +1,5 @@
 from telegram import Bot, Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext
 import time
 from itertools import cycle
 import pandas as pd
@@ -7,8 +7,8 @@ import requests
 import sys
 
 # Токен Telegram бота
-API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', '', 
-            '', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
+API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', 'NXUF3LWUVDD3A0UG', 
+            'NXUF3LWUVDD3A0UG', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
             'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
 
 def check_api_key(api_key):
@@ -122,10 +122,9 @@ def stop(update: Update, context: CallbackContext):
     print("Получена команда /stop. Бот завершает работу.")
     sys.exit(0)
 
-def main():
+async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-    updater = Updater(token)
-    bot = Bot(token=token)
+    application = Application.builder().token(token).build()
 
     # Список каналов и топиков
     channels_and_topics = [
@@ -151,9 +150,9 @@ def main():
     api_keys_cycle = cycle(API_KEYS)
 
     # Обработчик команды /stop
-    updater.dispatcher.add_handler(CommandHandler('stop', stop))
+    application.add_handler(CommandHandler('stop', stop))
 
-    updater.start_polling()
+    await application.start()
 
     try:
         while True:
@@ -178,7 +177,7 @@ def main():
                         # Отправка сигнала в оба канала и топики
                         for channel in channels_and_topics:
                             notify_signals(
-                                bot,
+                                application.bot,
                                 signal_message,
                                 chat_id=channel['chat_id'],
                                 message_thread_id=channel.get('message_thread_id')
@@ -189,5 +188,8 @@ def main():
     except KeyboardInterrupt:
         print("Бот остановлен вручную.")
 
+    await application.stop()
+
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
