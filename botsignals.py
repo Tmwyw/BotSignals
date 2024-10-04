@@ -1,12 +1,14 @@
-from telegram import Bot
+from telegram import Bot, Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 import time
 from itertools import cycle
 import pandas as pd
 import requests
+import sys
 
 # Токен Telegram бота
-API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', 'NXUF3LWUVDD3A0UG', 
-            'NXUF3LWUVDD3A0UG', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
+API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', '', 
+            '', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
             'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
 
 def check_api_key(api_key):
@@ -114,8 +116,15 @@ def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
     bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
+def stop(update: Update, context: CallbackContext):
+    """Остановка бота через команду /stop."""
+    update.message.reply_text('Бот остановлен.')
+    print("Получена команда /stop. Бот завершает работу.")
+    sys.exit(0)
+
 def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
+    updater = Updater(token)
     bot = Bot(token=token)
 
     # Список каналов и топиков
@@ -141,36 +150,44 @@ def main():
     # Создание цикла API ключей
     api_keys_cycle = cycle(API_KEYS)
 
-    while True:
-        for from_symbol, to_symbol in currency_pairs:
-            api_key = next(api_keys_cycle)
-            
-            # Проверяем, работает ли API ключ
-            if not check_api_key(api_key):
-                print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
-                continue
+    # Обработчик команды /stop
+    updater.dispatcher.add_handler(CommandHandler('stop', stop))
 
-            # Если ключ рабочий, получаем данные валютной пары
-            df = get_currency_data(from_symbol, to_symbol, api_key)
+    updater.start_polling()
 
-            if df is not None:
-                # Рассчитываем скользящие средние
-                df_with_ma = calculate_moving_averages(df)
+    try:
+        while True:
+            for from_symbol, to_symbol in currency_pairs:
+                api_key = next(api_keys_cycle)
+                
+                # Проверяем, работает ли API ключ
+                if not check_api_key(api_key):
+                    print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
+                    continue
 
-                # Проверяем наличие сигнала
-                signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
-                if signal_message:
-                    # Отправка сигнала в оба канала и топики
-                    for channel in channels_and_topics:
-                        notify_signals(
-                            bot,
-                            signal_message,
-                            chat_id=channel['chat_id'],
-                            message_thread_id=channel.get('message_thread_id')
-                        )
-            
-            # Пауза между запросами для предотвращения превышения лимитов API
-            time.sleep(5)
+                # Если ключ рабочий, получаем данные валютной пары
+                df = get_currency_data(from_symbol, to_symbol, api_key)
+
+                if df is not None:
+                    # Рассчитываем скользящие средние
+                    df_with_ma = calculate_moving_averages(df)
+
+                    # Проверяем наличие сигнала
+                    signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                    if signal_message:
+                        # Отправка сигнала в оба канала и топики
+                        for channel in channels_and_topics:
+                            notify_signals(
+                                bot,
+                                signal_message,
+                                chat_id=channel['chat_id'],
+                                message_thread_id=channel.get('message_thread_id')
+                            )
+                
+                # Пауза между запросами для предотвращения превышения лимитов API
+                time.sleep(5)
+    except KeyboardInterrupt:
+        print("Бот остановлен вручную.")
 
 if __name__ == '__main__':
     main()
