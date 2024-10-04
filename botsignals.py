@@ -3,7 +3,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 import logging
 
-API_TOKEN = '8068789170:AAHmKXcP9g_qTVuP_KNBAFGU56__-0nDseQ'  # Укажи свой реальный токен здесь
+API_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'  # Укажи свой реальный токен здесь
 
 # Логирование для отслеживания работы
 logging.basicConfig(
