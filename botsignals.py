@@ -1,14 +1,12 @@
-from telegram import Bot, Update
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram import Bot
 import time
 from itertools import cycle
 import pandas as pd
 import requests
-import sys
 
 # Токен Telegram бота
-API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', 'NXUF3LWUVDD3A0UG', 
-            'NXUF3LWUVDD3A0UG', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
+API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', '', 
+            '', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
             'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
 
 def check_api_key(api_key):
@@ -116,15 +114,9 @@ def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
     bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
-def stop(update: Update, context: CallbackContext):
-    """Остановка бота через команду /stop."""
-    update.message.reply_text('Бот остановлен.')
-    print("Получена команда /stop. Бот завершает работу.")
-    sys.exit(0)
-
-async def main():
+def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-    application = Application.builder().token(token).build()
+    bot = Bot(token=token)
 
     # Список каналов и топиков
     channels_and_topics = [
@@ -149,47 +141,36 @@ async def main():
     # Создание цикла API ключей
     api_keys_cycle = cycle(API_KEYS)
 
-    # Обработчик команды /stop
-    application.add_handler(CommandHandler('stop', stop))
+    while True:
+        for from_symbol, to_symbol in currency_pairs:
+            api_key = next(api_keys_cycle)
+            
+            # Проверяем, работает ли API ключ
+            if not check_api_key(api_key):
+                print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
+                continue
 
-    await application.start()
+            # Если ключ рабочий, получаем данные валютной пары
+            df = get_currency_data(from_symbol, to_symbol, api_key)
 
-    try:
-        while True:
-            for from_symbol, to_symbol in currency_pairs:
-                api_key = next(api_keys_cycle)
-                
-                # Проверяем, работает ли API ключ
-                if not check_api_key(api_key):
-                    print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
-                    continue
+            if df is not None:
+                # Рассчитываем скользящие средние
+                df_with_ma = calculate_moving_averages(df)
 
-                # Если ключ рабочий, получаем данные валютной пары
-                df = get_currency_data(from_symbol, to_symbol, api_key)
-
-                if df is not None:
-                    # Рассчитываем скользящие средние
-                    df_with_ma = calculate_moving_averages(df)
-
-                    # Проверяем наличие сигнала
-                    signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
-                    if signal_message:
-                        # Отправка сигнала в оба канала и топики
-                        for channel in channels_and_topics:
-                            notify_signals(
-                                application.bot,
-                                signal_message,
-                                chat_id=channel['chat_id'],
-                                message_thread_id=channel.get('message_thread_id')
-                            )
-                
-                # Пауза между запросами для предотвращения превышения лимитов API
-                time.sleep(5)
-    except KeyboardInterrupt:
-        print("Бот остановлен вручную.")
-
-    await application.stop()
+                # Проверяем наличие сигнала
+                signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                if signal_message:
+                    # Отправка сигнала в оба канала и топики
+                    for channel in channels_and_topics:
+                        notify_signals(
+                            bot,
+                            signal_message,
+                            chat_id=channel['chat_id'],
+                            message_thread_id=channel.get('message_thread_id')
+                        )
+            
+            # Пауза между запросами для предотвращения превышения лимитов API
+            time.sleep(5)
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
