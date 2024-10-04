@@ -9,6 +9,25 @@ API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', 'NXUF3LW
             'NXUF3LWUVDD3A0UG', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
             'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
 
+def check_api_key(api_key):
+    """
+    Функция для проверки работоспособности API ключа.
+    Возвращает True, если ключ работает, False — если достиг лимита или невалиден.
+    """
+    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=EUR&to_symbol=USD&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+
+    if "Error Message" in data:
+        print(f"Ключ {api_key} не работает: {data['Error Message']}")
+        return False
+    elif "Information" in data and "API rate limit" in data['Information']:
+        print(f"Ключ {api_key} достиг лимита: {data['Information']}")
+        return False
+    else:
+        print(f"Ключ {api_key} работает корректно!")
+        return True
+
 def get_currency_data(from_symbol, to_symbol, api_key):
     """
     Получение данных о валютной паре с Alpha Vantage API.
@@ -26,7 +45,7 @@ def get_currency_data(from_symbol, to_symbol, api_key):
         df = df.sort_index()  # Сортировка по дате
         return df
     except KeyError:
-        print("Ошибка в получении данных от API:", data)
+        print(f"Ошибка в получении данных от API ключа {api_key}: {data}")
         return None
 
 def calculate_moving_averages(df, short_window=5, long_window=20):
@@ -96,7 +115,7 @@ def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
 def main():
-    token = 'YOUR_TELEGRAM_BOT_API_TOKEN'
+    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     bot = Bot(token=token)
 
     # Список каналов и топиков
@@ -125,6 +144,13 @@ def main():
     while True:
         for from_symbol, to_symbol in currency_pairs:
             api_key = next(api_keys_cycle)
+            
+            # Проверяем, работает ли API ключ
+            if not check_api_key(api_key):
+                print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
+                continue
+
+            # Если ключ рабочий, получаем данные валютной пары
             df = get_currency_data(from_symbol, to_symbol, api_key)
 
             if df is not None:
