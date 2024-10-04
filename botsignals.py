@@ -96,13 +96,13 @@ def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
 def main():
-    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
+    token = 'YOUR_TELEGRAM_BOT_API_TOKEN'
     bot = Bot(token=token)
 
     # Список каналов и топиков
     channels_and_topics = [
-        {'chat_id': '-1002243376132', 'message_thread_id': '4'},  # Первый канал, топик
-        {'chat_id': '-1002290780268', 'message_thread_id': '6'},  # Второй канал, топик
+        {'chat_id': '-1002243376132', 'message_thread_id': '2'},  # Первый канал, топик
+        {'chat_id': '-1002290780268', 'message_thread_id': '4'},  # Второй канал, топик
     ]
     
     # Валютные пары
