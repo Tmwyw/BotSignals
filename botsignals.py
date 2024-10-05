@@ -43,9 +43,12 @@ def get_currency_data(from_symbol, to_symbol=None):
 
     # Возвращаем цену или сообщение об ошибке
     if "Realtime Currency Exchange Rate" in data:
-        return data['Realtime Currency Exchange Rate']['5. Exchange Rate'], None
+        price = data['Realtime Currency Exchange Rate']['5. Exchange Rate']
+        return price, None
     elif "Global Quote" in data:
-        return data['Global Quote']['05. price'], None
+        price = data['Global Quote']['05. price']
+        last_update = data['Global Quote']['07. latest trading day']  # Добавляем время последнего обновления
+        return price, f"Последнее обновление: {last_update}"
     else:
         logger.error(f"Ошибка получения данных для {from_symbol}/{to_symbol}")
         return None, "Не удалось получить данные."
@@ -56,12 +59,12 @@ async def send_signal(update: Update, context, asset: str):
         from_symbol, to_symbol = assets[asset]
         price, error = get_currency_data(from_symbol, to_symbol)
 
-        if error:
-            await update.message.reply_text(error)
-        else:
+        if price:
             pair_symbol = f"{from_symbol}/{to_symbol}" if to_symbol else from_symbol
-            signal_message = (f"🔥 Актуальная цена для {pair_symbol}: {price}")
+            signal_message = (f"🔥 Актуальная цена для {pair_symbol}: {price}\n{error}" if error else "")
             await update.message.reply_text(signal_message)
+        else:
+            await update.message.reply_text(error)
     else:
         await update.message.reply_text(f"Актив {asset} не поддерживается.")
 
