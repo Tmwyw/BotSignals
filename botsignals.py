@@ -115,16 +115,16 @@ async def signal_loop(bot, last_signals):
             
             await asyncio.sleep(5)
 
-def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def startbot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = True
-    logging.info("Бот запущен командой /start")
+    logging.info("Бот запущен командой /startbot")
     update.message.reply_text('Бот запущен!')
     
-def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+def stopbot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = False
-    logging.info("Бот остановлен командой /stop")
+    logging.info("Бот остановлен командой /stopbot")
     update.message.reply_text('Бот остановлен!')
 
 async def main():
@@ -139,8 +139,8 @@ async def main():
     await application.initialize()
 
     # Добавляем обработчики команд
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("stop", stop))
+    application.add_handler(CommandHandler("startbot", startbot))
+    application.add_handler(CommandHandler("stopbot", stopbot))
 
     # Запускаем бота
     logging.info("Запуск бота...")
