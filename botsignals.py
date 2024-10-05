@@ -1,10 +1,10 @@
 from telegram import Bot, Update
-from telegram.ext import CommandHandler, CallbackContext, Updater
 import time
 from itertools import cycle
 import pandas as pd
 import requests
 import asyncio
+from telegram.ext import Application, CommandHandler
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
@@ -137,22 +137,28 @@ def stop(update: Update, context: CallbackContext) -> None:
     is_active = False
     update.message.reply_text('Бот остановлен!')
 
-def main():
+async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     bot = Bot(token=token)
     last_signals = {}
 
-    updater = Updater(token=token)
-    dp = updater.dispatcher
+    # Создаем приложение с использованием нового синтаксиса
+    application = Application.builder().token(token).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("stop", stop))
+    # Добавляем обработчики команд
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stop", stop))
 
+    # Создаем асинхронную задачу для цикла сигналов
     loop = asyncio.get_event_loop()
     loop.create_task(signal_loop(bot, last_signals))
 
-    updater.start_polling()
-    updater.idle()
+    # Запускаем бота
+    await application.start()
+    await application.updater.start_polling()
+
+    # Ожидаем завершения
+    await application.updater.idle()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
