@@ -4,7 +4,7 @@ import requests
 import asyncio
 
 # Токен Telegram бота
-API_KEYS = ['5EUEU0UEJY0PGTCN']
+API_KEYS = ['GNP3HU5R5LBILMSB']
 API_KEY = API_KEYS[0]
 
 # Список активов
