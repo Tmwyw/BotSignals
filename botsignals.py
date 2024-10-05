@@ -3,11 +3,12 @@ import time
 from itertools import cycle
 import pandas as pd
 import requests
+import asyncio
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 
-def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
+async def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
     """
     Получение данных SMA о валютной паре с Alpha Vantage API.
     """
@@ -81,15 +82,14 @@ def check_for_signal(df, from_symbol, to_symbol):
         return signal_message
     return None
 
-
-def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
+async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
-    Функция отправки сигнала в Telegram через бота.
+    Асинхронная функция отправки сигнала в Telegram через бота.
     message_thread_id — используется для отправки сообщений в конкретный топик.
     """
-    bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
+    await bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
-def main():
+async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     bot = Bot(token=token)
 
@@ -121,7 +121,7 @@ def main():
             api_key = next(api_keys_cycle)
 
             # Получаем SMA данные
-            df_sma = get_sma_data(from_symbol, to_symbol, api_key)
+            df_sma = await get_sma_data(from_symbol, to_symbol, api_key)
 
             if df_sma is not None:
                 # Проверяем наличие сигнала
@@ -129,7 +129,7 @@ def main():
                 if signal_message:
                     # Отправка сигнала в оба канала и топики
                     for channel in channels_and_topics:
-                        notify_signals(
+                        await notify_signals(
                             bot,
                             signal_message,
                             chat_id=channel['chat_id'],
@@ -137,7 +137,7 @@ def main():
                         )
             
             # Пауза между запросами для предотвращения превышения лимитов API
-            time.sleep(5)
+            await asyncio.sleep(5)
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
