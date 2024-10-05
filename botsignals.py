@@ -82,7 +82,6 @@ async def main():
     # Запуск бота
     await application.start()
     await application.updater.start_polling()
-    await application.wait_for_shutdown()
 
 if __name__ == '__main__':
     asyncio.run(main())
