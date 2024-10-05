@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Токен Telegram бота
 TELEGRAM_BOT_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-ALPHA_VANTAGE_API_KEY = 'GNP3HU5R5LBILMSB'
+ALPHA_VANTAGE_API_KEY = 'QSPA6IIRC5CGQU43'
 
 # Список активов
 assets = {
