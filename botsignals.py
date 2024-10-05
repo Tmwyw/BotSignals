@@ -2,6 +2,12 @@ from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, CallbackContext
 import requests
 import asyncio
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+logger.info("Бот запущен")
+
 
 # Токен Telegram бота
 API_KEYS = ['GNP3HU5R5LBILMSB']
