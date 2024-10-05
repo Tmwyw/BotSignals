@@ -4,7 +4,7 @@ from itertools import cycle
 import pandas as pd
 import requests
 import asyncio
-from telegram.ext import Application, CommandHandler
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
@@ -127,12 +127,12 @@ async def signal_loop(bot, last_signals):
             
             await asyncio.sleep(5)
 
-def start(update: Update, context: CallbackContext) -> None:
+def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = True
     update.message.reply_text('Бот запущен!')
-
-def stop(update: Update, context: CallbackContext) -> None:
+    
+def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = False
     update.message.reply_text('Бот остановлен!')
