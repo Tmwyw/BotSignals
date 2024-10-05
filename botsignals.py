@@ -25,7 +25,7 @@ assets = {
     "bitcoin": ("BTC", "USD"),
 }
 
-async def get_currency_data(from_symbol, to_symbol=None):
+def get_currency_data(from_symbol, to_symbol=None):
     """
     Получение данных о валютной паре или активе с Alpha Vantage API.
     """
@@ -48,31 +48,31 @@ async def get_currency_data(from_symbol, to_symbol=None):
         return price, None
     return None, "Не удалось получить данные"
 
-async def send_signal(update: Update, context: CallbackContext, asset: str):
+def send_signal(update: Update, context: CallbackContext, asset: str):
     """
     Отправка актуальной цены актива в ответ на команду.
     """
     if asset in assets:
         from_symbol, to_symbol = assets[asset]
-        price, error = await get_currency_data(from_symbol, to_symbol)
+        price, error = get_currency_data(from_symbol, to_symbol)
 
         if error:
-            await update.message.reply_text(error)
+            update.message.reply_text(error)
         else:
             pair_symbol = f"{from_symbol}/{to_symbol}" if to_symbol else from_symbol
             signal_message = (f"🔥Актуальная цена для {pair_symbol}: {price}")
-            await update.message.reply_text(signal_message)
+            update.message.reply_text(signal_message)
     else:
-        await update.message.reply_text(f"Актив {asset} не поддерживается.")
+        update.message.reply_text(f"Актив {asset} не поддерживается.")
 
-async def handle_command(update: Update, context: CallbackContext):
+def handle_command(update: Update, context: CallbackContext):
     """
     Универсальный обработчик для команд актива.
     """
     command = update.message.text[1:]  # Получаем название актива (убираем "/")
-    await send_signal(update, context, command)
+    send_signal(update, context, command)
 
-async def main():
+def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     application = Application.builder().token(token).build()
 
