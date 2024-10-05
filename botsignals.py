@@ -1,141 +1,150 @@
-from telegram import Bot
-import time
-from itertools import cycle
-import pandas as pd
 import requests
+import time
+import logging
+from telegram import Bot
 
-# Токен Telegram бота
-API_KEYS = ['QSPA6IIRC5CGQU43']
+# Конфигурации API
+API_KEY = 'QSPA6IIRC5CGQU43'  # Ключ Alpha Vantage
+API_URL = 'https://www.alphavantage.co/query'
+TELEGRAM_BOT_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
+bot = Bot(token=TELEGRAM_BOT_TOKEN)
 
-def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
-    """
-    Получение данных SMA о валютной паре с Alpha Vantage API.
-    """
-    symbol = f"{from_symbol}{to_symbol}"
-    url = f'https://www.alphavantage.co/query?function=SMA&symbol={symbol}&interval={interval}&time_period={time_period}&series_type=close&entitlement=realtime&apikey={api_key}'
+# Конфигурации каналов Telegram
+channels = [
+    {'chat_id': '-1002243376132', 'message_thread_id': '2'},  # Первый канал, топик
+    {'chat_id': '-1002290780268', 'message_thread_id': '4'}   # Второй канал, топик
+]
+
+# Настройка логов
+logging.basicConfig(filename='bot_logs.log', level=logging.INFO)
+
+# Валютные пары и акции для отслеживания
+assets = {
+    'forex': ['EUR_USD', 'USD_TRY', 'GBP_USD', 'EUR_AUD', 'EUR_CHF', 'USD_ZAR'],
+    'stocks': ['INTC', 'MSFT', 'KO', 'LTC']
+}
+
+# Параметры EMA
+short_ema_period = 12
+long_ema_period = 26
+
+# Параметры RSI
+rsi_period = 14
+overbought = 70
+oversold = 30
+
+# Получение данных с Alpha Vantage
+def get_data(symbol, interval):
+    params = {
+        'function': 'TIME_SERIES_INTRADAY',
+        'symbol': symbol,
+        'interval': interval,
+        'apikey': API_KEY,
+        'datatype': 'json',
+        'outputsize': 'compact'
+    }
+    response = requests.get(API_URL, params=params)
+    return response.json()
+
+# Вычисление EMA
+def calculate_ema(prices, period):
+    ema = [sum(prices[:period]) / period]  # Первая EMA - среднее значение первых "period" цен
+    multiplier = 2 / (period + 1)
+    for price in prices[period:]:
+        ema.append((price - ema[-1]) * multiplier + ema[-1])
+    return ema
+
+# Вычисление RSI
+def calculate_rsi(prices, period):
+    gains = [0]
+    losses = [0]
+    for i in range(1, len(prices)):
+        change = prices[i] - prices[i-1]
+        if change > 0:
+            gains.append(change)
+            losses.append(0)
+        else:
+            gains.append(0)
+            losses.append(abs(change))
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    rsi = []
+    for i in range(period, len(prices)):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+        if avg_loss == 0:
+            rsi.append(100)
+        else:
+            rs = avg_gain / avg_loss
+            rsi.append(100 - (100 / (1 + rs)))
+    return rsi
+
+# Вычисление MACD
+def calculate_macd(prices):
+    short_ema = calculate_ema(prices, 12)
+    long_ema = calculate_ema(prices, 26)
+    macd = [s - l for s, l in zip(short_ema, long_ema)]
+    signal_line = calculate_ema(macd, 9)
+    return macd, signal_line
+
+# Проверка условий для сигналов
+def check_signals(data):
+    prices = [float(candle['4. close']) for candle in data.values()]
+    short_ema = calculate_ema(prices, short_ema_period)
+    long_ema = calculate_ema(prices, long_ema_period)
+    rsi = calculate_rsi(prices, rsi_period)
+    macd, signal_line = calculate_macd(prices)
+
+    # Условия для лонга
+    if short_ema[-1] > long_ema[-1] and rsi[-1] < oversold and macd[-1] > signal_line[-1]:
+        return 'LONG', prices[-1]
     
-    response = requests.get(url)
-    data = response.json()
+    # Условия для шорта
+    elif short_ema[-1] < long_ema[-1] and rsi[-1] > overbought and macd[-1] < signal_line[-1]:
+        return 'SHORT', prices[-1]
 
-    try:
-        # Извлечение временных рядов и преобразование в DataFrame
-        time_series = data['Technical Analysis: SMA']
-        df = pd.DataFrame.from_dict(time_series, orient='index')
-        df = df.rename(columns={'SMA': 'SMA'})  # Берем SMA
-        df['SMA'] = df['SMA'].astype(float)
-        df = df.sort_index()  # Сортировка по дате
-        return df
-    except KeyError:
-        print("Ошибка в получении данных от API:", data)
-        return None
+    return None, None
 
-def choose_time_frame(df):
-    """
-    Определение времени сделки на основе пересечения скользящих средних.
-    """
-    last_crosses = df['Short_MA'] - df['Long_MA']  # Разница между скользящими средними
-    last_crosses_sign = last_crosses.apply(lambda x: 1 if x > 0 else -1)  # Определяем знак
+# Отправка сигнала в Telegram
+def send_signal(direction, asset, price):
+    signal = f"⬆️ LONG 🟢\n🔥 {asset} 👈🏻\n💵 Текущая цена: {price} 📈" if direction == 'LONG' else \
+             f"⬇️ SHORT 🔴\n🔥 {asset} 👈🏻\n💵 Текущая цена: {price} 📉"
+    for channel in channels:
+        bot.send_message(chat_id=channel['chat_id'], text=signal, message_thread_id=channel['message_thread_id'])
+    logging.info(f"Signal sent: {direction} {asset} at {price}")
 
-    # Находим индекс последнего пересечения
-    last_cross_index = (last_crosses_sign != last_crosses_sign.shift(1)).idxmax()
+# Анализ трендов на более долгом таймфрейме
+def analyze_trend(symbol):
+    # Анализ тренда на 15-минутном таймфрейме
+    data = get_data(symbol, '15min')
+    prices = [float(candle['4. close']) for candle in data['Time Series (15min)'].values()]
+    long_ema = calculate_ema(prices, long_ema_period)
+    short_ema = calculate_ema(prices, short_ema_period)
     
-    # Определяем количество свечей, прошедших с момента пересечения
-    candles_since_cross = len(df) - df.index.get_loc(last_cross_index)
-
-    # Выбираем таймфрейм в зависимости от времени, прошедшего с момента пересечения
-    if candles_since_cross <= 2:
-        return "1M"
-    elif candles_since_cross <= 5:
-        return "2M"
+    if short_ema[-1] > long_ema[-1]:
+        return 'UPTREND'
     else:
-        return "5M"
+        return 'DOWNTREND'
 
-def check_for_signal(df, from_symbol, to_symbol):
-    """
-    Проверка пересечения скользящих средних для определения сигналов на покупку/продажу.
-    Формирование сообщения о сигнале.
-    """
-    latest_data = df.iloc[-1]  # Последняя строка данных
-    previous_data = df.iloc[-2]  # Предыдущая строка данных
-    current_price = latest_data['SMA']  # Текущая SMA
-
-    # Форматируем валютную пару для сообщения
-    pair_symbol = f"{from_symbol}/{to_symbol}"
-
-    # Определяем время сделки
-    time_frame = choose_time_frame(df)
-
-    # Проверка пересечения скользящих средних и формирование сигнала
-    if latest_data['SMA'] > previous_data['SMA']:
-        # Сигнал на покупку (LONG)
-        signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Время сделки: {time_frame}\n"
-                          f"💵Текущая цена:📈 {current_price:.4f}")
-        return signal_message
-    elif latest_data['SMA'] < previous_data['SMA']:
-        # Сигнал на продажу (SHORT)
-        signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Время сделки: {time_frame}\n"
-                          f"💵Текущая цена:📉 {current_price:.4f}")
-        return signal_message
-    return None
-
-def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
-    """
-    Функция отправки сигнала в Telegram через бота.
-    message_thread_id — используется для отправки сообщений в конкретный топик.
-    """
-    bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
-
-def main():
-    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-    bot = Bot(token=token)
-
-    # Список каналов и топиков
-    channels_and_topics = [
-        {'chat_id': '-1002243376132', 'message_thread_id': '2'},  # Первый канал, топик
-        {'chat_id': '-1002290780268', 'message_thread_id': '4'},  # Второй канал, топик
-    ]
-    
-    # Валютные пары
-    currency_pairs = [
-        ('EUR', 'GBP'),
-        ('AUD', 'CAD'),
-        ('GBP', 'CHF'),
-        ('NZD', 'CAD'),
-        ('EUR', 'AUD'),
-        ('AUD', 'NZD'),
-        ('EUR', 'CHF'),
-        ('GBP', 'AUD'),
-        ('CAD', 'CHF'),
-        ('NZD', 'CHF'),
-    ]
-
-    # Создание цикла API ключей
-    api_keys_cycle = cycle(API_KEYS)
-
+# Основной цикл получения данных и отправки сигналов
+def run_bot():
+    timeframes = ['1min', '2min', '3min', '5min']  # Таймфреймы для анализа
     while True:
-        for from_symbol, to_symbol in currency_pairs:
-            api_key = next(api_keys_cycle)
+        try:
+            for asset in assets['forex'] + assets['stocks']:
+                trend = analyze_trend(asset)
+                for timeframe in timeframes:
+                    data = get_data(asset, timeframe)
+                    signals, price = check_signals(data[f"Time Series ({timeframe})"])
+                    # Отправляем сигнал только если тренд совпадает с направлением
+                    if signals == 'LONG' and trend == 'UPTREND':
+                        send_signal(signals, asset, price)
+                    elif signals == 'SHORT' and trend == 'DOWNTREND':
+                        send_signal(signals, asset, price)
+            time.sleep(30)  # Пауза между запросами для всех активов
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            time.sleep(60)  # В случае ошибки делаем паузу
 
-            # Получаем SMA данные
-            df_sma = get_sma_data(from_symbol, to_symbol, api_key)
-
-            if df_sma is not None:
-                # Проверяем наличие сигнала
-                signal_message = check_for_signal(df_sma, from_symbol, to_symbol)
-                if signal_message:
-                    # Отправка сигнала в оба канала и топики
-                    for channel in channels_and_topics:
-                        notify_signals(
-                            bot,
-                            signal_message,
-                            chat_id=channel['chat_id'],
-                            message_thread_id=channel.get('message_thread_id')
-                        )
-            
-            # Пауза между запросами для предотвращения превышения лимитов API
-            time.sleep(5)
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    run_bot()
