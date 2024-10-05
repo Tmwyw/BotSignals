@@ -4,7 +4,7 @@ import requests
 
 # Токен Telegram бота
 TELEGRAM_BOT_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-ALPHA_VANTAGE_API_KEY = 'NXUF3LWUVDD3A0UG'
+ALPHA_VANTAGE_API_KEY = 'GBMTX86HTLNQYH2F'
 
 # Список активов
 assets = {
