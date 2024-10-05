@@ -149,15 +149,8 @@ async def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("stop", stop))
 
-    # Создаем асинхронную задачу для цикла сигналов
-    loop = asyncio.get_event_loop()
-    loop.create_task(signal_loop(bot, last_signals))
-
-    # Запускаем бота с использованием start_polling
-    await application.start_polling()
-
-    # Ожидаем завершения
-    await application.updater.idle()
+    # Запускаем бота с использованием run_polling
+    await application.run_polling()
 
 if __name__ == '__main__':
     asyncio.run(main())
