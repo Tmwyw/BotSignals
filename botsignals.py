@@ -1,13 +1,11 @@
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, CallbackContext
 import requests
-import asyncio
 import logging
+
+# Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-logger.info("Бот запущен")
-
 
 # Токен Telegram бота
 API_KEYS = ['GNP3HU5R5LBILMSB']
@@ -78,16 +76,14 @@ async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     application = Application.builder().token(token).build()
 
-    # Инициализация приложения перед запуском
-    await application.initialize()
+    logger.info("Бот запущен")
 
     # Добавляем обработчики для команд
     for asset in assets.keys():
         application.add_handler(CommandHandler(asset, handle_command))
 
-    # Запуск бота
-    await application.start()
-    await application.updater.start_polling()
+    # Запуск бота и постоянное ожидание команд
+    application.run_polling()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
