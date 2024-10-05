@@ -6,7 +6,7 @@ import requests
 import asyncio
 
 # Токен Telegram бота
-API_KEYS = ['QSPA6IIRC5CGQU43']
+API_KEYS = ['QSPA6IIRC5CGQU4']
 
 async def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
     """
