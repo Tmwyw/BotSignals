@@ -72,6 +72,9 @@ async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     application = Application.builder().token(token).build()
 
+    # Инициализация приложения перед запуском
+    await application.initialize()
+
     # Добавляем обработчики для команд
     for asset in assets.keys():
         application.add_handler(CommandHandler(asset, handle_command))
