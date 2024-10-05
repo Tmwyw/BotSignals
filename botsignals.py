@@ -7,33 +7,27 @@ import requests
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 
-def get_currency_data(from_symbol, to_symbol, api_key):
+def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
     """
-    Получение данных о валютной паре с Alpha Vantage API.
+    Получение данных SMA о валютной паре с Alpha Vantage API.
     """
-    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&apikey={api_key}'
+    symbol = f"{from_symbol}{to_symbol}"
+    url = f'https://www.alphavantage.co/query?function=SMA&symbol={symbol}&interval={interval}&time_period={time_period}&series_type=close&entitlement=realtime&apikey={api_key}'
+    
     response = requests.get(url)
     data = response.json()
 
     try:
         # Извлечение временных рядов и преобразование в DataFrame
-        time_series = data['Time Series FX (Daily)']
+        time_series = data['Technical Analysis: SMA']
         df = pd.DataFrame.from_dict(time_series, orient='index')
-        df = df.rename(columns={'4. close': 'Close'})  # Берем только цены закрытия
-        df['Close'] = df['Close'].astype(float)
+        df = df.rename(columns={'SMA': 'SMA'})  # Берем SMA
+        df['SMA'] = df['SMA'].astype(float)
         df = df.sort_index()  # Сортировка по дате
         return df
     except KeyError:
         print("Ошибка в получении данных от API:", data)
         return None
-
-def calculate_moving_averages(df, short_window=5, long_window=20):
-    """
-    Вычисление краткосрочной и долгосрочной скользящих средних.
-    """
-    df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
-    df['Long_MA'] = df['Close'].rolling(window=long_window).mean()
-    return df
 
 def choose_time_frame(df):
     """
@@ -63,7 +57,7 @@ def check_for_signal(df, from_symbol, to_symbol):
     """
     latest_data = df.iloc[-1]  # Последняя строка данных
     previous_data = df.iloc[-2]  # Предыдущая строка данных
-    current_price = latest_data['Close']  # Текущая цена пары
+    current_price = latest_data['SMA']  # Текущая SMA
 
     # Форматируем валютную пару для сообщения
     pair_symbol = f"{from_symbol}/{to_symbol}"
@@ -72,13 +66,13 @@ def check_for_signal(df, from_symbol, to_symbol):
     time_frame = choose_time_frame(df)
 
     # Проверка пересечения скользящих средних и формирование сигнала
-    if latest_data['Short_MA'] > latest_data['Long_MA'] and previous_data['Short_MA'] <= previous_data['Long_MA']:
+    if latest_data['SMA'] > previous_data['SMA']:
         # Сигнал на покупку (LONG)
         signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
                           f"💵Текущая цена:📈 {current_price:.4f}")
         return signal_message
-    elif latest_data['Short_MA'] < latest_data['Long_MA'] and previous_data['Short_MA'] >= previous_data['Long_MA']:
+    elif latest_data['SMA'] < previous_data['SMA']:
         # Сигнал на продажу (SHORT)
         signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
@@ -123,14 +117,13 @@ def main():
     while True:
         for from_symbol, to_symbol in currency_pairs:
             api_key = next(api_keys_cycle)
-            df = get_currency_data(from_symbol, to_symbol, api_key)
 
-            if df is not None:
-                # Рассчитываем скользящие средние
-                df_with_ma = calculate_moving_averages(df)
+            # Получаем SMA данные
+            df_sma = get_sma_data(from_symbol, to_symbol, api_key)
 
+            if df_sma is not None:
                 # Проверяем наличие сигнала
-                signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                signal_message = check_for_signal(df_sma, from_symbol, to_symbol)
                 if signal_message:
                     # Отправка сигнала в оба канала и топики
                     for channel in channels_and_topics:
