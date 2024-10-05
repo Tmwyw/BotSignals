@@ -1,19 +1,15 @@
 from telegram import Bot, Update
-import time
+from telegram.ext import Application, CommandHandler, ContextTypes
+import asyncio
 from itertools import cycle
 import pandas as pd
 import requests
-import asyncio
-from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 is_active = False  # Флаг активности
 
 async def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_period=10):
-    """
-    Получение данных SMA о валютной паре с Alpha Vantage API.
-    """
     symbol = f"{from_symbol}{to_symbol}"
     url = f'https://www.alphavantage.co/query?function=SMA&symbol={symbol}&interval={interval}&time_period={time_period}&series_type=close&entitlement=realtime&apikey={api_key}'
     
@@ -32,14 +28,9 @@ async def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_pe
         return None
 
 def choose_time_frame(df):
-    """
-    Определение времени сделки на основе движения скользящей средней (SMA).
-    """
     last_crosses = df['SMA'].diff()
-
     last_cross_sign = last_crosses.apply(lambda x: 1 if x > 0 else -1)
     last_cross_index = (last_cross_sign != last_cross_sign.shift(1)).idxmax()
-
     candles_since_cross = len(df) - df.index.get_loc(last_cross_index)
 
     if candles_since_cross <= 2:
@@ -50,16 +41,10 @@ def choose_time_frame(df):
         return "5M"
 
 def check_for_signal(df, from_symbol, to_symbol, last_signals):
-    """
-    Проверка движения скользящей средней для определения сигналов на покупку/продажу.
-    Формирование сообщения о сигнале.
-    """
     latest_data = df.iloc[-1]
     previous_data = df.iloc[-2]
     current_sma = latest_data['SMA']
-
     pair_symbol = f"{from_symbol}/{to_symbol}"
-
     time_frame = choose_time_frame(df)
 
     if current_sma > previous_data['SMA'] and last_signals.get(pair_symbol) != 'LONG':
@@ -77,14 +62,9 @@ def check_for_signal(df, from_symbol, to_symbol, last_signals):
     return None
 
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
-    """
-    Асинхронная функция отправки сигнала в Telegram через бота.
-    """
     await bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
 async def signal_loop(bot, last_signals):
-    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-
     channels_and_topics = [
         {'chat_id': '-1002243376132', 'message_thread_id': '2'},
         {'chat_id': '-1002290780268', 'message_thread_id': '4'},
@@ -150,9 +130,13 @@ async def main():
     application.add_handler(CommandHandler("stop", stop))
 
     # Запускаем бота с использованием run_polling
-    await application.run_polling()
+    await application.start()
+
+    # Запускаем цикл для сигналов
+    await signal_loop(bot, last_signals)
+
+    # Завершаем приложение
+    await application.stop()
 
 if __name__ == '__main__':
-    # Используем существующий цикл событий вместо asyncio.run
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    asyncio.run(main())
