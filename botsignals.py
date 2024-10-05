@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, CallbackContext
 import requests
 
 # Токен Telegram бота
-API_KEYS = ['ТВОЙ_КЛЮЧ_1', 'ТВОЙ_КЛЮЧ_2']
+API_KEYS = ['5EUEU0UEJY0PGTCN ']
 API_KEY = API_KEYS[0]
 
 # Список активов
