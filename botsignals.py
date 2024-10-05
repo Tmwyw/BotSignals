@@ -78,11 +78,14 @@ async def main():
 
     logger.info("Бот запущен")
 
+    # Инициализация приложения
+    await application.initialize()
+
     # Добавляем обработчики для команд
     for asset in assets.keys():
         application.add_handler(CommandHandler(asset, handle_command))
 
-    # Запуск бота и постоянное ожидание команд
+    # Запуск бота
     await application.start()
     await application.updater.start_polling()
 
