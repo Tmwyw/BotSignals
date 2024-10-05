@@ -4,6 +4,10 @@ import asyncio
 from itertools import cycle
 import pandas as pd
 import requests
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
@@ -22,9 +26,10 @@ async def get_sma_data(from_symbol, to_symbol, api_key, interval='5min', time_pe
         df = df.rename(columns={'SMA': 'SMA'})
         df['SMA'] = df['SMA'].astype(float)
         df = df.sort_index()
+        logging.info(f"Данные SMA получены для пары {from_symbol}/{to_symbol}")
         return df
     except KeyError:
-        print("Ошибка в получении данных от API:", data)
+        logging.error(f"Ошибка в получении данных от API для пары {from_symbol}/{to_symbol}: {data}")
         return None
 
 def choose_time_frame(df):
@@ -52,16 +57,19 @@ def check_for_signal(df, from_symbol, to_symbol, last_signals):
         signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
                           f"💵Текущая цена:📈 {current_sma:.4f}")
+        logging.info(f"Сигнал на покупку для {pair_symbol}")
         return signal_message
     elif current_sma < previous_data['SMA'] and last_signals.get(pair_symbol) != 'SHORT':
         last_signals[pair_symbol] = 'SHORT'
         signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
                           f"💵Текущая цена:📉 {current_sma:.4f}")
+        logging.info(f"Сигнал на продажу для {pair_symbol}")
         return signal_message
     return None
 
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
+    logging.info(f"Отправка сигнала в канал {chat_id}")
     await bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
 async def signal_loop(bot, last_signals):
@@ -110,11 +118,13 @@ async def signal_loop(bot, last_signals):
 def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = True
+    logging.info("Бот запущен командой /start")
     update.message.reply_text('Бот запущен!')
     
 def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     global is_active
     is_active = False
+    logging.info("Бот остановлен командой /stop")
     update.message.reply_text('Бот остановлен!')
 
 async def main():
@@ -133,6 +143,7 @@ async def main():
     application.add_handler(CommandHandler("stop", stop))
 
     # Запускаем бота
+    logging.info("Запуск бота...")
     await application.start()
 
     # Запускаем цикл для сигналов
