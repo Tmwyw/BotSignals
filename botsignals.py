@@ -68,6 +68,9 @@ async def main():
     # Создаём бота
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
+    # Инициализация приложения
+    await application.initialize()
+
     # Добавляем обработчики для команд
     for asset in assets.keys():
         application.add_handler(CommandHandler(asset, handle_command))
