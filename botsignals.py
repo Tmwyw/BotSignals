@@ -16,16 +16,16 @@ ALPHA_VANTAGE_API_KEY = 'GNP3HU5R5LBILMSB'
 
 # Список активов
 assets = {
-    "eurusd": ("EUR", "USD"),
-    "gold_silver": ("XAU", "XAG"),  # Золото и серебро
-    "gbpusd": ("GBP", "USD"),
-    "nzd_cad": ("NZD", "CAD"),
+    "eur_usd": ("EUR", "USD"),
+    "usd_try": ("USD", "TRY"),
+    "gbp_usd": ("GBP", "USD"),
     "eur_aud": ("EUR", "AUD"),
-    "ton": ("TONCOIN", "USD"),  # Тонкоин против USD
     "eur_chf": ("EUR", "CHF"),
-    "microsoft_apple": ("MSFT", "AAPL"),
-    "mcdonalds": ("MCD", None),
-    "bitcoin": ("BTC", "USD"),
+    "usd_zar": ("USD", "ZAR"),
+    "intel": ("INTC", None),  # Intel stock
+    "microsoft": ("MSFT", None),  # Microsoft stock
+    "coca_cola": ("KO", None),  # Coca-Cola stock
+    "litecoin": ("LTC", "USD"),  # Litecoin against USD
 }
 
 def get_currency_data(from_symbol, to_symbol=None):
