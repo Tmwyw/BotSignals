@@ -68,7 +68,7 @@ def handle_command(update: Update, context: CallbackContext):
     send_signal(update, context, command)
 
 def main():
-    token = 'ТВОЙ_ТЕЛЕГРАМ_ТОКЕН'
+    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     application = Application.builder().token(token).build()
 
     # Добавляем обработчики для команд
