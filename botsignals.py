@@ -153,9 +153,8 @@ async def main():
     loop = asyncio.get_event_loop()
     loop.create_task(signal_loop(bot, last_signals))
 
-    # Запускаем бота
-    await application.start()
-    await application.updater.start_polling()
+    # Запускаем бота с использованием start_polling
+    await application.start_polling()
 
     # Ожидаем завершения
     await application.updater.idle()
