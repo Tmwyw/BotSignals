@@ -125,11 +125,14 @@ async def main():
     # Создаем приложение с использованием нового синтаксиса
     application = Application.builder().token(token).build()
 
+    # Инициализация приложения
+    await application.initialize()
+
     # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("stop", stop))
 
-    # Запускаем бота с использованием run_polling
+    # Запускаем бота
     await application.start()
 
     # Запускаем цикл для сигналов
