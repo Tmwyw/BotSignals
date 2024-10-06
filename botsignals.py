@@ -25,8 +25,8 @@ assets = {
 }
 
 # Параметры EMA
-short_ema_period = 9
-long_ema_period = 21
+short_ema_period = 5
+long_ema_period = 10
 
 # Получение данных с Alpha Vantage с учетом типов активов
 def get_data(symbol, interval, asset_type):
