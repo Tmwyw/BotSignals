@@ -28,6 +28,10 @@ assets = {
 short_ema_period = 5
 long_ema_period = 10
 
+# Таймфреймы для валютных пар и акций
+forex_timeframes = ['1min', '5min', '15min', '30min', '60min']
+stocks_timeframes = ['1min', '5min', '15min', '30min', '60min']
+
 # Получение данных с Alpha Vantage с учетом типов активов
 def get_data(symbol, interval, asset_type):
     function = 'FX_INTRADAY' if asset_type == 'forex' else 'TIME_SERIES_INTRADAY'
@@ -113,10 +117,10 @@ def analyze_trend(symbol, asset_type):
 
 # Основной цикл получения данных и отправки сигналов
 def run_bot():
-    timeframes = ['1min', '2min', '3min', '5min']  # Таймфреймы для анализа
     while True:
         try:
             for asset_type, asset_list in assets.items():
+                timeframes = forex_timeframes if asset_type == 'forex' else stocks_timeframes
                 for asset in asset_list:
                     trend = analyze_trend(asset, asset_type)
                     for timeframe in timeframes:
