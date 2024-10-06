@@ -24,14 +24,14 @@ assets = {
     'stocks': ['INTC', 'MSFT', 'KO', 'LTC']
 }
 
-# Параметры EMA
-short_ema_period = 12
-long_ema_period = 26
+# Параметры EMA (уменьшены для большей чувствительности)
+short_ema_period = 9
+long_ema_period = 21
 
-# Параметры RSI
+# Параметры RSI (меньше для более частых сигналов)
 rsi_period = 14
-overbought = 70
-oversold = 30
+overbought = 60  # Более мягкий порог для перекупленности
+oversold = 40  # Более мягкий порог для перепроданности
 
 # Получение данных с Alpha Vantage
 def get_data(symbol, interval):
@@ -94,10 +94,10 @@ def calculate_rsi(prices, period):
 
 # Вычисление MACD
 def calculate_macd(prices):
-    short_ema = calculate_ema(prices, 12)
-    long_ema = calculate_ema(prices, 26)
+    short_ema = calculate_ema(prices, short_ema_period)
+    long_ema = calculate_ema(prices, long_ema_period)
     macd = [s - l for s, l in zip(short_ema, long_ema)]
-    signal_line = calculate_ema(macd, 9)
+    signal_line = calculate_ema(macd, 6)  # Уменьшен период для сигнальной линии до 6
     
     # Логируем MACD и сигнальную линию
     logging.info(f"MACD: {macd}")
