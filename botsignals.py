@@ -28,15 +28,17 @@ assets = {
 short_ema_period = 9
 long_ema_period = 21
 
-# Получение данных с Alpha Vantage
-def get_data(symbol, interval):
+# Получение данных с Alpha Vantage с учетом типов активов
+def get_data(symbol, interval, asset_type):
+    function = 'FX_INTRADAY' if asset_type == 'forex' else 'TIME_SERIES_INTRADAY'
     params = {
-        'function': 'TIME_SERIES_INTRADAY',
+        'function': function,
         'symbol': symbol,
         'interval': interval,
         'apikey': API_KEY,
         'datatype': 'json',
-        'outputsize': 'compact'
+        'outputsize': 'compact',
+        'entitlement': 'realtime'  # Добавляем параметр для реальных данных
     }
     response = requests.get(API_URL, params=params)
     
@@ -94,9 +96,9 @@ def send_signal(direction, asset, price):
     logging.info(f"Signal sent: {direction} {asset} at {price}")
 
 # Анализ трендов на более долгом таймфрейме
-def analyze_trend(symbol):
+def analyze_trend(symbol, asset_type):
     # Анализ тренда на 15-минутном таймфрейме
-    data = get_data(symbol, '15min')
+    data = get_data(symbol, '15min', asset_type)
     prices = [float(candle['4. close']) for candle in data['Time Series (15min)'].values()]
     long_ema = calculate_ema(prices, long_ema_period)
     short_ema = calculate_ema(prices, short_ema_period)
@@ -114,20 +116,21 @@ def run_bot():
     timeframes = ['1min', '2min', '3min', '5min']  # Таймфреймы для анализа
     while True:
         try:
-            for asset in assets['forex'] + assets['stocks']:
-                trend = analyze_trend(asset)
-                for timeframe in timeframes:
-                    data = get_data(asset, timeframe)
-                    signals, price = check_signals(data[f"Time Series ({timeframe})"])
-                    
-                    # Логируем сигналы
-                    logging.info(f"Checking signals for {asset} on {timeframe} timeframe")
-                    
-                    # Отправляем сигнал только если тренд совпадает с направлением
-                    if signals == 'LONG' and trend == 'UPTREND':
-                        send_signal(signals, asset, price)
-                    elif signals == 'SHORT' and trend == 'DOWNTREND':
-                        send_signal(signals, asset, price)
+            for asset_type, asset_list in assets.items():
+                for asset in asset_list:
+                    trend = analyze_trend(asset, asset_type)
+                    for timeframe in timeframes:
+                        data = get_data(asset, timeframe, asset_type)
+                        signals, price = check_signals(data[f"Time Series ({timeframe})"])
+                        
+                        # Логируем сигналы
+                        logging.info(f"Checking signals for {asset} on {timeframe} timeframe")
+                        
+                        # Отправляем сигнал только если тренд совпадает с направлением
+                        if signals == 'LONG' and trend == 'UPTREND':
+                            send_signal(signals, asset, price)
+                        elif signals == 'SHORT' and trend == 'DOWNTREND':
+                            send_signal(signals, asset, price)
             time.sleep(30)  # Пауза между запросами для всех активов
         except Exception as e:
             logging.error(f"Error: {e}")
