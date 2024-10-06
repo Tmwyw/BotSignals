@@ -24,14 +24,9 @@ assets = {
     'stocks': ['INTC', 'MSFT', 'KO', 'LTC']
 }
 
-# Параметры EMA (уменьшены для большей чувствительности)
+# Параметры EMA
 short_ema_period = 9
 long_ema_period = 21
-
-# Параметры RSI (меньше для более частых сигналов)
-rsi_period = 14
-overbought = 60  # Более мягкий порог для перекупленности
-oversold = 40  # Более мягкий порог для перепроданности
 
 # Получение данных с Alpha Vantage
 def get_data(symbol, interval):
@@ -62,50 +57,7 @@ def calculate_ema(prices, period):
     
     return ema
 
-# Вычисление RSI
-def calculate_rsi(prices, period):
-    gains = [0]
-    losses = [0]
-    for i in range(1, len(prices)):
-        change = prices[i] - prices[i-1]
-        if change > 0:
-            gains.append(change)
-            losses.append(0)
-        else:
-            gains.append(0)
-            losses.append(abs(change))
-    
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
-    rsi = []
-    for i in range(period, len(prices)):
-        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-        if avg_loss == 0:
-            rsi.append(100)
-        else:
-            rs = avg_gain / avg_loss
-            rsi.append(100 - (100 / (1 + rs)))
-    
-    # Логируем рассчитанный RSI
-    logging.info(f"RSI for period {period}: {rsi}")
-    
-    return rsi
-
-# Вычисление MACD
-def calculate_macd(prices):
-    short_ema = calculate_ema(prices, short_ema_period)
-    long_ema = calculate_ema(prices, long_ema_period)
-    macd = [s - l for s, l in zip(short_ema, long_ema)]
-    signal_line = calculate_ema(macd, 6)  # Уменьшен период для сигнальной линии до 6
-    
-    # Логируем MACD и сигнальную линию
-    logging.info(f"MACD: {macd}")
-    logging.info(f"Signal Line: {signal_line}")
-    
-    return macd, signal_line
-
-# Проверка условий для сигналов
+# Проверка условий для сигналов на основе пересечения EMA
 def check_signals(data):
     prices = [float(candle['4. close']) for candle in data.values()]
     
@@ -114,19 +66,17 @@ def check_signals(data):
     
     short_ema = calculate_ema(prices, short_ema_period)
     long_ema = calculate_ema(prices, long_ema_period)
-    rsi = calculate_rsi(prices, rsi_period)
-    macd, signal_line = calculate_macd(prices)
 
-    # Логируем значения индикаторов
-    logging.info(f"Short EMA: {short_ema[-1]}, Long EMA: {long_ema[-1]}, RSI: {rsi[-1]}, MACD: {macd[-1]}, Signal Line: {signal_line[-1]}")
+    # Логируем значения EMA
+    logging.info(f"Short EMA: {short_ema[-1]}, Long EMA: {long_ema[-1]}")
 
     # Условия для лонга
-    if short_ema[-1] > long_ema[-1] and rsi[-1] < oversold and macd[-1] > signal_line[-1]:
+    if short_ema[-1] > long_ema[-1]:
         logging.info(f"Signal: LONG")
         return 'LONG', prices[-1]
     
     # Условия для шорта
-    elif short_ema[-1] < long_ema[-1] and rsi[-1] > overbought and macd[-1] < signal_line[-1]:
+    elif short_ema[-1] < long_ema[-1]:
         logging.info(f"Signal: SHORT")
         return 'SHORT', prices[-1]
 
