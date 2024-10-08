@@ -24,9 +24,9 @@ assets = {
 }
 
 # Параметры RSI
-rsi_period = 14
-overbought_threshold = 70  # Уровень перекупленности
-oversold_threshold = 30     # Уровень перепроданности
+rsi_period = 7
+overbought_threshold = 80  # Уровень перекупленности
+oversold_threshold = 20     # Уровень перепроданности
 
 # Получение данных с Alpha Vantage
 def get_data(symbol):
