@@ -23,11 +23,12 @@ assets = {
     'forex': ['EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'CHF/JPY']
 }
 
-# Параметры EMA
-short_ema_period = 5
-long_ema_period = 10
+# Параметры RSI
+rsi_period = 14
+overbought_threshold = 70  # Уровень перекупленности
+oversold_threshold = 30     # Уровень перепроданности
 
-# Получение данных с Alpha Vantage с учетом типов активов
+# Получение данных с Alpha Vantage
 def get_data(symbol):
     params = {
         'function': 'FX_INTRADAY',
@@ -44,40 +45,39 @@ def get_data(symbol):
     
     return response.json()
 
-# Вычисление EMA
-def calculate_ema(prices, period):
-    ema = [sum(prices[:period]) / period]  # Первая EMA - среднее значение первых "period" цен
-    multiplier = 2 / (period + 1)
-    for price in prices[period:]:
-        ema.append((price - ema[-1]) * multiplier + ema[-1])
+# Вычисление RSI
+def calculate_rsi(prices, period):
+    if len(prices) < period:
+        logging.info("Not enough data to calculate RSI.")
+        return None
     
-    # Логируем рассчитанную EMA
-    logging.info(f"EMA for period {period}: {ema}")
+    deltas = [j - i for i, j in zip(prices[:-1], prices[1:])]
+    gain = sum(x for x in deltas if x > 0) / period
+    loss = -sum(x for x in deltas if x < 0) / period
+    rs = gain / loss if loss != 0 else 0
+    rsi = 100 - (100 / (1 + rs))
     
-    return ema
+    logging.info(f"RSI for period {period}: {rsi}")
+    
+    return rsi
 
-# Проверка условий для сигналов на основе пересечения EMA
+# Проверка условий для сигналов на основе RSI
 def check_signals(data):
     prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
     
     # Логируем текущие цены
     logging.info(f"Prices: {prices}")
     
-    if len(prices) < long_ema_period:
-        logging.info("Not enough data to calculate EMA.")
-        return None, None
-
-    short_ema = calculate_ema(prices, short_ema_period)
-    long_ema = calculate_ema(prices, long_ema_period)
+    rsi = calculate_rsi(prices, rsi_period)
 
     # Условия для лонга
-    if short_ema[-1] > long_ema[-1]:
-        logging.info(f"Signal: LONG")
+    if rsi is not None and rsi < oversold_threshold:
+        logging.info(f"Signal: LONG (RSI: {rsi})")
         return 'LONG', prices[-1]
     
     # Условия для шорта
-    elif short_ema[-1] < long_ema[-1]:
-        logging.info(f"Signal: SHORT")
+    elif rsi is not None and rsi > overbought_threshold:
+        logging.info(f"Signal: SHORT (RSI: {rsi})")
         return 'SHORT', prices[-1]
 
     logging.info(f"No signals generated.")
