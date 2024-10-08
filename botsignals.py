@@ -1,6 +1,7 @@
 import requests
 import time
 import logging
+import random  # Импортируем модуль random
 from telegram import Bot
 
 # Конфигурации API
@@ -16,7 +17,7 @@ channels = [
 ]
 
 # Настройка логов
-logging.basicConfig(filename='bot_logs.log', level=logging.INFO, 
+logging.basicConfig(filename='bot_logs.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Валютные пары для отслеживания
@@ -48,58 +49,30 @@ def get_data(symbol):
 
     return response.json()
 
-# Определение уровней Фибоначчи
-def calculate_fibonacci_levels(prices):
-    max_price = max(prices)
-    min_price = min(prices)
+# Генерация случайного сигнала
+def generate_random_signal(asset):
+    current_price = random.uniform(1.0, 2.0)  # Генерация случайной цены для примера
+    direction = random.choice(['LONG', 'SHORT'])  # Случайный выбор направления
     
-    # Уровни Фибоначчи
-    levels = {
-        "0.0%": max_price,
-        "23.6%": max_price - (max_price - min_price) * 0.236,
-        "38.2%": max_price - (max_price - min_price) * 0.382,
-        "50.0%": (max_price + min_price) / 2,
-        "61.8%": max_price - (max_price - min_price) * 0.618,
-        "100%": min_price
-    }
+    # Расчет уровня стоп-лосса
+    stop_loss = current_price - (current_price * 0.02) if direction == 'LONG' else current_price + (current_price * 0.02)
     
-    logging.info(f"Fibonacci levels: {levels}")
-    return levels
-
-# Генерация сигнала на основе уровней Фибоначчи
-def generate_signal(data, asset):
-    prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
-    
-    if len(prices) < 2:
-        logging.info("Not enough data to generate signal.")
-        return None
-    
-    fibonacci_levels = calculate_fibonacci_levels(prices)
-    current_price = prices[-1]
-
-    # Предполагаем, что цена может достичь этих уровней
-    long_entry_price = fibonacci_levels["23.6%"]  # Уровень для LONG сигнала
-    stop_loss = fibonacci_levels["61.8%"]  # Уровень для STOP LOSS
-    take_profit_1 = fibonacci_levels["38.2%"]  # Первый уровень тейк-профита
-    take_profit_2 = fibonacci_levels["50.0%"]  # Второй уровень тейк-профита
+    # Расчет динамического риска
+    dynamic_risk = risk_percentage * current_price
     
     # Формирование сигнала
     signal = f"""
-🟢 LONG 🔼
+🟢 {direction} 🔼
 
 💵 {asset}
 
-Цена входа:🔼 {long_entry_price:.5f}
-
-🎯Take Profit 1️⃣: 📌 ➖ {take_profit_1:.5f}
-🎯Take Profit 2️⃣: 📌 ➖ {take_profit_2:.5f}
+Цена входа:🔼 {current_price:.5f}
 
 ⛔️STOP-DOBOR; 💥 ➖ {stop_loss:.5f}
 
-🦠 риск; 🥵 ➖ {risk_percentage * 100:.2f}%
+🦠 риск; 🥵 ➖ {dynamic_risk:.2f}%
 """
-    
-    logging.info(f"Generated signal for {asset}: {signal}")
+    logging.info(f"Generated random signal for {asset}: {signal}")
     return signal
 
 # Отправка сигнала в Telegram
@@ -117,12 +90,11 @@ def run_bot():
                 data = get_data(asset)
                 if not data:  # Пропускаем, если данные не получены
                     continue
-                    
-                signal = generate_signal(data, asset)
+                
+                signal = generate_random_signal(asset)
 
                 # Отправляем сигнал, если он сгенерирован
-                if signal:
-                    send_signal(signal)
+                send_signal(signal)
 
             time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
