@@ -109,11 +109,11 @@ async def main():
     # Валютные пары
     currency_pairs = [
         ('EUR', 'USD'),  # EUR/USD (OTC)
-    ('GBP', 'USD'),  # GBP/USD (OTC)
-    ('USD', 'CHF'),  # USD/CHF (OTC)
-    ('AUD', 'CAD'),  # AUD/CAD (OTC)
-    ('EUR', 'GBP'),  # EUR/GBP (OTC)
-    ('USD', 'MXN'),  # USD/MXN (OTC)
+        ('GBP', 'USD'),  # GBP/USD (OTC)
+        ('USD', 'CHF'),  # USD/CHF (OTC)
+        ('AUD', 'CAD'),  # AUD/CAD (OTC)
+        ('EUR', 'GBP'),  # EUR/GBP (OTC)
+        ('USD', 'MXN'),  # USD/MXN (OTC)
     ]
 
     # Создание цикла API ключей
@@ -122,13 +122,8 @@ async def main():
     while True:
         for from_symbol, to_symbol in currency_pairs:
             api_key = next(api_keys_cycle)
-            
-            # Проверяем, работает ли API ключ
-            if not await check_api_key(api_key):
-                print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
-                continue
 
-            # Если ключ рабочий, получаем данные валютной пары
+            # Получаем данные валютной пары
             df = await get_currency_data(from_symbol, to_symbol, api_key)
 
             if df is not None:
