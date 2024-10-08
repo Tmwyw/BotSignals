@@ -23,10 +23,8 @@ assets = {
     'forex': ['EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'CHF/JPY']
 }
 
-# Параметры RSI
-rsi_period = 7
-overbought_threshold = 80  # Уровень перекупленности
-oversold_threshold = 20     # Уровень перепроданности
+# Параметры
+risk_percentage = 0.35  # Риск 35%
 
 # Получение данных с Alpha Vantage
 def get_data(symbol):
@@ -45,53 +43,75 @@ def get_data(symbol):
     
     return response.json()
 
-# Вычисление RSI
-def calculate_rsi(prices, period):
-    if len(prices) < period:
-        logging.info("Not enough data to calculate RSI.")
-        return None
+# Определение уровней Фибоначчи
+def calculate_fibonacci_levels(prices):
+    max_price = max(prices)
+    min_price = min(prices)
+    difference = max_price - min_price
     
-    deltas = [j - i for i, j in zip(prices[:-1], prices[1:])]
-    gain = sum(x for x in deltas if x > 0) / period
-    loss = -sum(x for x in deltas if x < 0) / period
-    rs = gain / loss if loss != 0 else 0
-    rsi = 100 - (100 / (1 + rs))
+    # Уровни Фибоначчи
+    levels = {
+        "0.0%": max_price,
+        "23.6%": max_price - difference * 0.236,
+        "38.2%": max_price - difference * 0.382,
+        "50.0%": (max_price + min_price) / 2,
+        "61.8%": max_price - difference * 0.618,
+        "100%": min_price
+    }
     
-    logging.info(f"RSI for period {period}: {rsi}")
-    
-    return rsi
+    logging.info(f"Fibonacci levels: {levels}")
+    return levels
 
-# Проверка условий для сигналов на основе RSI
-def check_signals(data):
+# Генерация сигнала на основе уровней Фибоначчи
+def generate_signal(data, asset):
     prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
     
-    # Логируем текущие цены
-    logging.info(f"Prices: {prices}")
+    if len(prices) < 2:
+        logging.info("Not enough data to generate signal.")
+        return None
     
-    rsi = calculate_rsi(prices, rsi_period)
+    fibonacci_levels = calculate_fibonacci_levels(prices)
+    current_price = prices[-1]
 
-    # Условия для лонга
-    if rsi is not None and rsi < oversold_threshold:
-        logging.info(f"Signal: LONG (RSI: {rsi})")
-        return 'LONG', prices[-1]
-    
-    # Условия для шорта
-    elif rsi is not None and rsi > overbought_threshold:
-        logging.info(f"Signal: SHORT (RSI: {rsi})")
-        return 'SHORT', prices[-1]
+    # Условия для сигнала LONG
+    if current_price < fibonacci_levels["23.6%"]:
+        # Расчет уровня стоп-лосса
+        stop_loss = fibonacci_levels["61.8%"]
+        
+        # Расчет динамического риска
+        dynamic_risk = risk_percentage * current_price
+        
+        # Расчет тейк-профитов
+        take_profit_1 = fibonacci_levels["23.6%"]
+        take_profit_2 = fibonacci_levels["38.2%"]
+        take_profit_3 = fibonacci_levels["50.0%"]
+        
+        # Формирование сигнала
+        signal = f"""
+🟢 LONG 🔼
 
-    logging.info(f"No signals generated.")
-    return None, None
+💵 {asset}
+
+Цена входа:🔼 {current_price:.5f}
+
+🎯Take Profit 1️⃣: 📌 ➖ {take_profit_1:.5f}
+🎯Take Profit 2️⃣: 📌 ➖ {take_profit_2:.5f}
+🎯Take Profit 3️⃣: 📌 ➖ {take_profit_3:.5f}
+
+⛔️STOP-DOBOR; 💥 ➖ {stop_loss:.5f}
+
+🦠 риск; 🥵 ➖ {dynamic_risk:.2f}%
+"""
+        return signal
+
+    logging.info(f"No signals generated for {asset}.")
+    return None
 
 # Отправка сигнала в Telegram
-def send_signal(direction, asset, price):
-    signal = f"⬆️ LONG 🟢\n🔥 {asset} 👈🏻\n💵 Текущая цена: {price} 📈" if direction == 'LONG' else \
-             f"⬇️ SHORT 🔴\n🔥 {asset} 👈🏻\n💵 Текущая цена: {price} 📉"
-    
+def send_signal(signal):
     for channel in channels:
         bot.send_message(chat_id=channel['chat_id'], text=signal, message_thread_id=channel['message_thread_id'])
-    
-    logging.info(f"Signal sent: {direction} {asset} at {price}")
+    logging.info(f"Signal sent: {signal}")
 
 # Основной цикл получения данных и отправки сигналов
 def run_bot():
@@ -99,14 +119,11 @@ def run_bot():
         try:
             for asset in assets['forex']:
                 data = get_data(asset)
-                signals, price = check_signals(data)
-
-                # Логируем сигналы
-                logging.info(f"Checking signals for {asset}")
+                signal = generate_signal(data, asset)
 
                 # Отправляем сигнал, если он сгенерирован
-                if signals:
-                    send_signal(signals, asset, price)
+                if signal:
+                    send_signal(signal)
             time.sleep(30)  # Пауза между запросами для всех активов
         except Exception as e:
             logging.error(f"Error: {e}")
