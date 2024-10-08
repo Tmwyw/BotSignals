@@ -16,7 +16,8 @@ channels = [
 ]
 
 # Настройка логов
-logging.basicConfig(filename='bot_logs.log', level=logging.INFO)
+logging.basicConfig(filename='bot_logs.log', level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Валютные пары для отслеживания
 assets = {
@@ -39,8 +40,12 @@ def get_data(symbol):
     response = requests.get(API_URL, params=params)
     
     # Логируем полученные данные
-    logging.info(f"Data for {symbol}: {response.json()}")
+    logging.info(f"Fetching data for {symbol}. Response: {response.status_code}")
     
+    if response.status_code != 200:
+        logging.error(f"Error fetching data for {symbol}: {response.text}")
+        return {}
+
     return response.json()
 
 # Определение уровней Фибоначчи
@@ -59,15 +64,15 @@ def calculate_fibonacci_levels(prices):
         "100%": min_price
     }
     
-    logging.info(f"Fibonacci levels: {levels}")
+    logging.info(f"Calculated Fibonacci levels: {levels}")
     return levels
 
 # Генерация сигнала на основе уровней Фибоначчи
 def generate_signal(data, asset):
-    prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
+    prices = [float(candle['4. close']) for candle in data.get('Time Series FX (1min)', {}).values()]
     
     if len(prices) < 2:
-        logging.info("Not enough data to generate signal.")
+        logging.warning("Not enough data to generate signal.")
         return None
     
     fibonacci_levels = calculate_fibonacci_levels(prices)
@@ -102,9 +107,10 @@ def generate_signal(data, asset):
 
 🦠 риск; 🥵 ➖ {dynamic_risk:.2f}%
 """
+        logging.info(f"Generated signal for {asset}: {signal}")
         return signal
 
-    logging.info(f"No signals generated for {asset}.")
+    logging.info(f"No signals generated for {asset}. Current price: {current_price:.5f}")
     return None
 
 # Отправка сигнала в Telegram
@@ -119,11 +125,15 @@ def run_bot():
         try:
             for asset in assets['forex']:
                 data = get_data(asset)
+                if not data:  # Пропускаем, если данные не получены
+                    continue
+                    
                 signal = generate_signal(data, asset)
 
                 # Отправляем сигнал, если он сгенерирован
                 if signal:
                     send_signal(signal)
+
             time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
             logging.error(f"Error: {e}")

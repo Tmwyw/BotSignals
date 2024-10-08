@@ -2,6 +2,5 @@ python-telegram-bot[job-queue]==20.0
 requests
 matplotlib
 seaborn
-requests
 websockets
 iqoptionapi
