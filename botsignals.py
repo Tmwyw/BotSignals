@@ -10,25 +10,6 @@ API_KEYS = ['QSPA6IIRC5CGQU43']
 # Хранение последних сигналов для валютных пар
 last_signals = {}
 
-async def check_api_key(api_key):
-    """
-    Функция для проверки работоспособности API ключа.
-    Возвращает True, если ключ работает, False — если достиг лимита или невалиден.
-    """
-    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=EUR&to_symbol=USD&apikey={api_key}'
-    response = requests.get(url)
-    data = response.json()
-
-    if "Error Message" in data:
-        print(f"Ключ {api_key} не работает: {data['Error Message']}")
-        return False
-    elif "Information" in data and "API rate limit" in data['Information']:
-        print(f"Ключ {api_key} достиг лимита: {data['Information']}")
-        return False
-    else:
-        print(f"Ключ {api_key} работает корректно!")
-        return True
-
 async def get_currency_data(from_symbol, to_symbol, api_key):
     """
     Получение данных о валютной паре с Alpha Vantage API.
