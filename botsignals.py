@@ -1,8 +1,8 @@
 import requests
 import time
 import logging
-import random  # Импортируем модуль random
 from telegram import Bot
+import asyncio
 
 # Конфигурации API
 API_KEY = 'QSPA6IIRC5CGQU43'  # Ключ Alpha Vantage
@@ -17,7 +17,7 @@ channels = [
 ]
 
 # Настройка логов
-logging.basicConfig(filename='bot_logs.log', level=logging.INFO,
+logging.basicConfig(filename='bot_logs.log', level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Валютные пары для отслеживания
@@ -76,13 +76,13 @@ def generate_random_signal(asset):
     return signal
 
 # Отправка сигнала в Telegram
-def send_signal(signal):
+async def send_signal(signal):
     for channel in channels:
-        bot.send_message(chat_id=channel['chat_id'], text=signal, message_thread_id=channel['message_thread_id'])
+        await bot.send_message(chat_id=channel['chat_id'], text=signal, message_thread_id=channel['message_thread_id'])
     logging.info(f"Signal sent: {signal}")
 
 # Основной цикл получения данных и отправки сигналов
-def run_bot():
+async def run_bot():
     logging.info("Bot is starting...")
     while True:
         try:
@@ -94,12 +94,12 @@ def run_bot():
                 signal = generate_random_signal(asset)
 
                 # Отправляем сигнал, если он сгенерирован
-                send_signal(signal)
+                await send_signal(signal)
 
-            time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
+            await asyncio.sleep(10)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
             logging.error(f"Error: {e}")
-            time.sleep(60)  # В случае ошибки делаем паузу
+            await asyncio.sleep(10)  # В случае ошибки делаем паузу
 
 if __name__ == "__main__":
-    run_bot()
+    asyncio.run(run_bot())
