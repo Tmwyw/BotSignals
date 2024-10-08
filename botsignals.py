@@ -1,68 +1,176 @@
-import requests
-import pandas as pd
-import numpy as np
-import asyncio
 from telegram import Bot
-from telegram.constants import ParseMode
+import time
+from itertools import cycle
+import pandas as pd
+import requests
 
-API_KEY = 'QSPA6IIRC5CGQU43'
-TELEGRAM_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
-CHAT_ID = '-1002243376132'
-MESSAGE_THREAD_ID = '2'
-CURRENCY_PAIR = 'EUR/GBP'
+# Токен Telegram бота
+API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', '', 
+            '', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
+            'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
 
-# URL для получения дневных данных по валютной паре
-ALPHA_VANTAGE_URL = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=EUR&to_symbol=GBP&apikey={API_KEY}'
-
-# Функция для получения исторических данных по валютной паре
-def get_historical_data():
-    response = requests.get(ALPHA_VANTAGE_URL)
+def check_api_key(api_key):
+    """
+    Функция для проверки работоспособности API ключа.
+    Возвращает True, если ключ работает, False — если достиг лимита или невалиден.
+    """
+    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=EUR&to_symbol=USD&apikey={api_key}'
+    response = requests.get(url)
     data = response.json()
-    if 'Time Series FX (Daily)' in data:
-        return data['Time Series FX (Daily)']
+
+    if "Error Message" in data:
+        print(f"Ключ {api_key} не работает: {data['Error Message']}")
+        return False
+    elif "Information" in data and "API rate limit" in data['Information']:
+        print(f"Ключ {api_key} достиг лимита: {data['Information']}")
+        return False
     else:
-        print('Ошибка при получении данных от Alpha Vantage:', data)
+        print(f"Ключ {api_key} работает корректно!")
+        return True
+
+def get_currency_data(from_symbol, to_symbol, api_key):
+    """
+    Получение данных о валютной паре с Alpha Vantage API.
+    """
+    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&apikey={api_key}'
+    response = requests.get(url)
+    data = response.json()
+
+    try:
+        # Извлечение временных рядов и преобразование в DataFrame
+        time_series = data['Time Series FX (Daily)']
+        df = pd.DataFrame.from_dict(time_series, orient='index')
+        df = df.rename(columns={'4. close': 'Close'})  # Берем только цены закрытия
+        df['Close'] = df['Close'].astype(float)
+        df = df.sort_index()  # Сортировка по дате
+        return df
+    except KeyError:
+        print(f"Ошибка в получении данных от API ключа {api_key}: {data}")
         return None
 
-# Функция для вычисления скользящих средних
-def calculate_moving_averages(data):
-    df = pd.DataFrame(data).T  # транспонируем, чтобы даты были индексом
-    df.columns = ['open', 'high', 'low', 'close']
-    df = df.astype(float)
-
-    df['SMA_5'] = df['close'].rolling(window=5).mean()  # короткая средняя
-    df['SMA_20'] = df['close'].rolling(window=20).mean()  # длинная средняя
+def calculate_moving_averages(df, short_window=5, long_window=20):
+    """
+    Вычисление краткосрочной и долгосрочной скользящих средних.
+    """
+    df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
+    df['Long_MA'] = df['Close'].rolling(window=long_window).mean()
     return df
 
-# Функция для генерации торгового сигнала на основе пересечения скользящих средних
-def generate_signal(df):
-    latest = df.iloc[-1]
-    previous = df.iloc[-2]
+def choose_time_frame(df):
+    """
+    Определение времени сделки на основе пересечения скользящих средних.
+    """
+    last_crosses = df['Short_MA'] - df['Long_MA']  # Разница между скользящими средними
+    last_crosses_sign = last_crosses.apply(lambda x: 1 if x > 0 else -1)  # Определяем знак
+
+    # Находим индекс последнего пересечения
+    last_cross_index = (last_crosses_sign != last_crosses_sign.shift(1)).idxmax()
     
-    # Если короткая пересекает длинную сверху -> сигнал на покупку (LONG)
-    if latest['SMA_5'] > latest['SMA_20'] and previous['SMA_5'] <= previous['SMA_20']:
-        return "🔥LONG🟢🔼", latest['close']
-    # Если короткая пересекает длинную снизу -> сигнал на продажу (SHORT)
-    elif latest['SMA_5'] < latest['SMA_20'] and previous['SMA_5'] >= previous['SMA_20']:
-        return "🔥SHORT🔴🔽", latest['close']
+    # Определяем количество свечей, прошедших с момента пересечения
+    candles_since_cross = len(df) - df.index.get_loc(last_cross_index)
+
+    # Выбираем таймфрейм в зависимости от времени, прошедшего с момента пересечения
+    if candles_since_cross <= 2:
+        return "1M"
+    elif candles_since_cross <= 5:
+        return "2M"
     else:
-        return None, latest['close']
+        return "5M"
 
-# Асинхронная функция для отправки сообщения в Telegram
-async def send_signal_to_telegram(price, signal):
-    message = f"{signal}\n🔥#EUR/GBP☝️\n💵Текущая цена:📈 {price:.4f}"
+def check_for_signal(df, from_symbol, to_symbol):
+    """
+    Проверка пересечения скользящих средних для определения сигналов на покупку/продажу.
+    Формирование сообщения о сигнале.
+    """
+    latest_data = df.iloc[-1]  # Последняя строка данных
+    previous_data = df.iloc[-2]  # Предыдущая строка данных
+    current_price = latest_data['Close']  # Текущая цена пары
+
+    # Форматируем валютную пару для сообщения
+    pair_symbol = f"{from_symbol}/{to_symbol}"
+
+    # Определяем время сделки
+    time_frame = choose_time_frame(df)
+
+    # Проверка пересечения скользящих средних и формирование сигнала
+    if latest_data['Short_MA'] > latest_data['Long_MA'] and previous_data['Short_MA'] <= previous_data['Long_MA']:
+        # Сигнал на покупку (LONG)
+        signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
+                          f"⌛️Время сделки: {time_frame}\n"
+                          f"💵Текущая цена:📈 {current_price:.4f}")
+        return signal_message
+    elif latest_data['Short_MA'] < latest_data['Long_MA'] and previous_data['Short_MA'] >= previous_data['Long_MA']:
+        # Сигнал на продажу (SHORT)
+        signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
+                          f"⌛️Время сделки: {time_frame}\n"
+                          f"💵Текущая цена:📉 {current_price:.4f}")
+        return signal_message
+    return None
+
+def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
+    """
+    Функция отправки сигнала в Telegram через бота.
+    message_thread_id — используется для отправки сообщений в конкретный топик.
+    """
+    bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
+
+def main():
+    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
+    bot = Bot(token=token)
+
+    # Список каналов и топиков
+    channels_and_topics = [
+        {'chat_id': '-1002243376132', 'message_thread_id': '2'},  # Первый канал, топик
+        {'chat_id': '-1002290780268', 'message_thread_id': '4'},  # Второй канал, топик
+    ]
     
-    bot = Bot(token=TELEGRAM_TOKEN)
-    await bot.send_message(chat_id=CHAT_ID, message_thread_id=MESSAGE_THREAD_ID, text=message, parse_mode=ParseMode.MARKDOWN)
+    # Валютные пары
+    currency_pairs = [
+        ('EUR', 'GBP'),
+        ('AUD', 'CAD'),
+        ('GBP', 'CHF'),
+        ('NZD', 'CAD'),
+        ('EUR', 'AUD'),
+        ('AUD', 'NZD'),
+        ('EUR', 'CHF'),
+        ('GBP', 'AUD'),
+        ('CAD', 'CHF'),
+        ('NZD', 'CHF'),
+    ]
 
-# Основная логика программы
-async def main():
-    data = get_historical_data()
-    if data:
-        df = calculate_moving_averages(data)
-        signal, price = generate_signal(df)
-        if signal:
-            await send_signal_to_telegram(price, signal)
+    # Создание цикла API ключей
+    api_keys_cycle = cycle(API_KEYS)
+
+    while True:
+        for from_symbol, to_symbol in currency_pairs:
+            api_key = next(api_keys_cycle)
+            
+            # Проверяем, работает ли API ключ
+            if not check_api_key(api_key):
+                print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
+                continue
+
+            # Если ключ рабочий, получаем данные валютной пары
+            df = get_currency_data(from_symbol, to_symbol, api_key)
+
+            if df is not None:
+                # Рассчитываем скользящие средние
+                df_with_ma = calculate_moving_averages(df)
+
+                # Проверяем наличие сигнала
+                signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                if signal_message:
+                    # Отправка сигнала в оба канала и топики
+                    for channel in channels_and_topics:
+                        notify_signals(
+                            bot,
+                            signal_message,
+                            chat_id=channel['chat_id'],
+                            message_thread_id=channel.get('message_thread_id')
+                        )
+            
+            # Пауза между запросами для предотвращения превышения лимитов API
+            time.sleep(5)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
