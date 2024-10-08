@@ -4,7 +4,7 @@ import logging
 from telegram import Bot
 
 # Конфигурации API
-API_KEY = 'QSPA6IIRC5CGQU43'  # Ключ Alpha Vantage
+API_KEY = 'N8X087UXR441ILIP'  # Ключ Alpha Vantage
 API_URL = 'https://www.alphavantage.co/query'
 TELEGRAM_BOT_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
 bot = Bot(token=TELEGRAM_BOT_TOKEN)
