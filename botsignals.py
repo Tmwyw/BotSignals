@@ -36,7 +36,6 @@ def get_data(symbol):
         'apikey': API_KEY,
         'datatype': 'json',
         'outputsize': 'compact',
-        'entitlement': 'realtime'  # Добавляем параметр для реальных данных
     }
     response = requests.get(API_URL, params=params)
     
@@ -53,66 +52,55 @@ def get_data(symbol):
 def calculate_fibonacci_levels(prices):
     max_price = max(prices)
     min_price = min(prices)
-    difference = max_price - min_price
     
     # Уровни Фибоначчи
     levels = {
         "0.0%": max_price,
-        "23.6%": max_price - difference * 0.236,
-        "38.2%": max_price - difference * 0.382,
+        "23.6%": max_price - (max_price - min_price) * 0.236,
+        "38.2%": max_price - (max_price - min_price) * 0.382,
         "50.0%": (max_price + min_price) / 2,
-        "61.8%": max_price - difference * 0.618,
+        "61.8%": max_price - (max_price - min_price) * 0.618,
         "100%": min_price
     }
     
-    logging.info(f"Calculated Fibonacci levels: {levels}")
+    logging.info(f"Fibonacci levels: {levels}")
     return levels
 
 # Генерация сигнала на основе уровней Фибоначчи
 def generate_signal(data, asset):
-    prices = [float(candle['4. close']) for candle in data.get('Time Series FX (1min)', {}).values()]
+    prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
     
     if len(prices) < 2:
-        logging.warning("Not enough data to generate signal.")
+        logging.info("Not enough data to generate signal.")
         return None
     
     fibonacci_levels = calculate_fibonacci_levels(prices)
     current_price = prices[-1]
 
-    # Условия для сигнала LONG
-    if current_price < fibonacci_levels["23.6%"]:
-        # Расчет уровня стоп-лосса
-        stop_loss = fibonacci_levels["61.8%"]
-        
-        # Расчет динамического риска
-        dynamic_risk = risk_percentage * current_price
-        
-        # Расчет тейк-профитов
-        take_profit_1 = fibonacci_levels["23.6%"]
-        take_profit_2 = fibonacci_levels["38.2%"]
-        take_profit_3 = fibonacci_levels["50.0%"]
-        
-        # Формирование сигнала
-        signal = f"""
+    # Предполагаем, что цена может достичь этих уровней
+    long_entry_price = fibonacci_levels["23.6%"]  # Уровень для LONG сигнала
+    stop_loss = fibonacci_levels["61.8%"]  # Уровень для STOP LOSS
+    take_profit_1 = fibonacci_levels["38.2%"]  # Первый уровень тейк-профита
+    take_profit_2 = fibonacci_levels["50.0%"]  # Второй уровень тейк-профита
+    
+    # Формирование сигнала
+    signal = f"""
 🟢 LONG 🔼
 
 💵 {asset}
 
-Цена входа:🔼 {current_price:.5f}
+Цена входа:🔼 {long_entry_price:.5f}
 
 🎯Take Profit 1️⃣: 📌 ➖ {take_profit_1:.5f}
 🎯Take Profit 2️⃣: 📌 ➖ {take_profit_2:.5f}
-🎯Take Profit 3️⃣: 📌 ➖ {take_profit_3:.5f}
 
 ⛔️STOP-DOBOR; 💥 ➖ {stop_loss:.5f}
 
-🦠 риск; 🥵 ➖ {dynamic_risk:.2f}%
+🦠 риск; 🥵 ➖ {risk_percentage * 100:.2f}%
 """
-        logging.info(f"Generated signal for {asset}: {signal}")
-        return signal
-
-    logging.info(f"No signals generated for {asset}. Current price: {current_price:.5f}")
-    return None
+    
+    logging.info(f"Generated signal for {asset}: {signal}")
+    return signal
 
 # Отправка сигнала в Telegram
 def send_signal(signal):
@@ -136,10 +124,10 @@ def run_bot():
                 if signal:
                     send_signal(signal)
 
-            time.sleep(10)  # Пауза между запросами для всех активов (5 минут)
+            time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
             logging.error(f"Error: {e}")
-            time.sleep(10)  # В случае ошибки делаем паузу
+            time.sleep(60)  # В случае ошибки делаем паузу
 
 if __name__ == "__main__":
     run_bot()
