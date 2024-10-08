@@ -1,6 +1,8 @@
 import requests
 import random
+import asyncio
 from telegram import Bot
+from telegram.constants import ParseMode
 
 # Константы для Alpha Vantage API и Telegram
 API_KEY = 'QSPA6IIRC5CGQU43'
@@ -28,19 +30,19 @@ def generate_signal():
     signal_type = random.choice(['🔥LONG🟢🔼', '🔥SHORT🔴🔽'])
     return signal_type
 
-# Функция для отправки сообщения в Telegram
-def send_signal_to_telegram(price, signal):
+# Асинхронная функция для отправки сообщения в Telegram
+async def send_signal_to_telegram(price, signal):
     message = f"{signal}\n🔥#EUR/GBP☝️\n💵Текущая цена:📈 {price:.4f}"
     
     bot = Bot(token=TELEGRAM_TOKEN)
-    bot.send_message(chat_id=CHAT_ID, message_thread_id=MESSAGE_THREAD_ID, text=message)
+    await bot.send_message(chat_id=CHAT_ID, message_thread_id=MESSAGE_THREAD_ID, text=message, parse_mode=ParseMode.MARKDOWN)
 
-# Основная логика
-def main():
+# Основная логика программы
+async def main():
     price = get_currency_price()
     if price is not None:
         signal = generate_signal()
-        send_signal_to_telegram(price, signal)
+        await send_signal_to_telegram(price, signal)
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
