@@ -73,7 +73,7 @@ def choose_time_frame(df):
     # Выбираем таймфрейм в зависимости от времени, прошедшего с момента пересечения
     if candles_since_cross <= 2:
         return "1M"
-    elif candles_since_cross <= 5:
+    elif candles_since_cross <= 10:
         return "2M"
     else:
         return "5M"
