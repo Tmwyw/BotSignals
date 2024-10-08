@@ -1,5 +1,5 @@
+import asyncio
 from telegram import Bot
-import time
 from itertools import cycle
 import pandas as pd
 import requests
@@ -7,7 +7,7 @@ import requests
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 
-def check_api_key(api_key):
+async def check_api_key(api_key):
     """
     Функция для проверки работоспособности API ключа.
     Возвращает True, если ключ работает, False — если достиг лимита или невалиден.
@@ -26,7 +26,7 @@ def check_api_key(api_key):
         print(f"Ключ {api_key} работает корректно!")
         return True
 
-def get_currency_data(from_symbol, to_symbol, api_key):
+async def get_currency_data(from_symbol, to_symbol, api_key):
     """
     Получение данных о валютной паре с Alpha Vantage API.
     """
@@ -105,14 +105,14 @@ def check_for_signal(df, from_symbol, to_symbol):
         return signal_message
     return None
 
-def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
+async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
     Функция отправки сигнала в Telegram через бота.
     message_thread_id — используется для отправки сообщений в конкретный топик.
     """
-    bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
+    await bot.send_message(chat_id=chat_id, text=signal_message, message_thread_id=message_thread_id)
 
-def main():
+async def main():
     token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
     bot = Bot(token=token)
 
@@ -144,12 +144,12 @@ def main():
             api_key = next(api_keys_cycle)
             
             # Проверяем, работает ли API ключ
-            if not check_api_key(api_key):
+            if not await check_api_key(api_key):
                 print(f"Пропуск ключа {api_key}, так как он не работает или достиг лимита.")
                 continue
 
             # Если ключ рабочий, получаем данные валютной пары
-            df = get_currency_data(from_symbol, to_symbol, api_key)
+            df = await get_currency_data(from_symbol, to_symbol, api_key)
 
             if df is not None:
                 # Рассчитываем скользящие средние
@@ -160,7 +160,7 @@ def main():
                 if signal_message:
                     # Отправка сигнала в оба канала и топики
                     for channel in channels_and_topics:
-                        notify_signals(
+                        await notify_signals(
                             bot,
                             signal_message,
                             chat_id=channel['chat_id'],
@@ -168,7 +168,7 @@ def main():
                         )
             
             # Пауза между запросами для предотвращения превышения лимитов API
-            time.sleep(5)
+            await asyncio.sleep(5)
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
