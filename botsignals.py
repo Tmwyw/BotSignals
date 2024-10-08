@@ -127,16 +127,12 @@ async def main():
     
     # Валютные пары
     currency_pairs = [
-        ('EUR', 'GBP'),
-        ('AUD', 'CAD'),
-        ('GBP', 'CHF'),
-        ('NZD', 'CAD'),
-        ('EUR', 'AUD'),
-        ('AUD', 'NZD'),
-        ('EUR', 'CHF'),
-        ('GBP', 'AUD'),
-        ('CAD', 'CHF'),
-        ('NZD', 'CHF'),
+        ('EUR', 'USD'),  # EUR/USD (OTC)
+    ('GBP', 'USD'),  # GBP/USD (OTC)
+    ('USD', 'CHF'),  # USD/CHF (OTC)
+    ('AUD', 'CAD'),  # AUD/CAD (OTC)
+    ('EUR', 'GBP'),  # EUR/GBP (OTC)
+    ('USD', 'MXN'),  # USD/MXN (OTC)
     ]
 
     # Создание цикла API ключей
