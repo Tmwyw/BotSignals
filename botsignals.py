@@ -18,36 +18,29 @@ channels = [
 # Настройка логов
 logging.basicConfig(filename='bot_logs.log', level=logging.INFO)
 
-# Валютные пары и акции для отслеживания
+# Валютные пары для отслеживания
 assets = {
-    'forex': ['EUR_USD', 'USD_TRY', 'GBP_USD', 'EUR_AUD', 'EUR_CHF', 'USD_ZAR'],
-    'stocks': ['INTC', 'MSFT', 'KO', 'LTC']
+    'forex': ['EUR/USD', 'USD/JPY', 'GBP/USD', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'CHF/JPY']
 }
 
 # Параметры EMA
 short_ema_period = 5
 long_ema_period = 10
 
-# Таймфреймы для валютных пар и акций
-forex_timeframes = ['1min', '5min', '15min', '30min', '60min']
-stocks_timeframes = ['1min', '5min', '15min', '30min', '60min']
-
 # Получение данных с Alpha Vantage с учетом типов активов
-def get_data(symbol, interval, asset_type):
-    function = 'FX_INTRADAY' if asset_type == 'forex' else 'TIME_SERIES_INTRADAY'
+def get_data(symbol):
     params = {
-        'function': function,
+        'function': 'FX_INTRADAY',
         'symbol': symbol,
-        'interval': interval,
+        'interval': '1min',  # Используем 1-минутный интервал
         'apikey': API_KEY,
         'datatype': 'json',
         'outputsize': 'compact',
-        'entitlement': 'realtime'  # Добавляем параметр для реальных данных
     }
     response = requests.get(API_URL, params=params)
     
     # Логируем полученные данные
-    logging.info(f"Data for {symbol} ({interval}): {response.json()}")
+    logging.info(f"Data for {symbol}: {response.json()}")
     
     return response.json()
 
@@ -65,16 +58,17 @@ def calculate_ema(prices, period):
 
 # Проверка условий для сигналов на основе пересечения EMA
 def check_signals(data):
-    prices = [float(candle['4. close']) for candle in data.values()]
+    prices = [float(candle['4. close']) for candle in data['Time Series FX (1min)'].values()]
     
     # Логируем текущие цены
     logging.info(f"Prices: {prices}")
     
+    if len(prices) < long_ema_period:
+        logging.info("Not enough data to calculate EMA.")
+        return None, None
+
     short_ema = calculate_ema(prices, short_ema_period)
     long_ema = calculate_ema(prices, long_ema_period)
-
-    # Логируем значения EMA
-    logging.info(f"Short EMA: {short_ema[-1]}, Long EMA: {long_ema[-1]}")
 
     # Условия для лонга
     if short_ema[-1] > long_ema[-1]:
@@ -99,42 +93,20 @@ def send_signal(direction, asset, price):
     
     logging.info(f"Signal sent: {direction} {asset} at {price}")
 
-# Анализ трендов на более долгом таймфрейме
-def analyze_trend(symbol, asset_type):
-    # Анализ тренда на 15-минутном таймфрейме
-    data = get_data(symbol, '15min', asset_type)
-    prices = [float(candle['4. close']) for candle in data['Time Series (15min)'].values()]
-    long_ema = calculate_ema(prices, long_ema_period)
-    short_ema = calculate_ema(prices, short_ema_period)
-    
-    # Логируем тренд
-    if short_ema[-1] > long_ema[-1]:
-        logging.info(f"Trend: UPTREND for {symbol}")
-        return 'UPTREND'
-    else:
-        logging.info(f"Trend: DOWNTREND for {symbol}")
-        return 'DOWNTREND'
-
 # Основной цикл получения данных и отправки сигналов
 def run_bot():
     while True:
         try:
-            for asset_type, asset_list in assets.items():
-                timeframes = forex_timeframes if asset_type == 'forex' else stocks_timeframes
-                for asset in asset_list:
-                    trend = analyze_trend(asset, asset_type)
-                    for timeframe in timeframes:
-                        data = get_data(asset, timeframe, asset_type)
-                        signals, price = check_signals(data[f"Time Series ({timeframe})"])
-                        
-                        # Логируем сигналы
-                        logging.info(f"Checking signals for {asset} on {timeframe} timeframe")
-                        
-                        # Отправляем сигнал только если тренд совпадает с направлением
-                        if signals == 'LONG' and trend == 'UPTREND':
-                            send_signal(signals, asset, price)
-                        elif signals == 'SHORT' and trend == 'DOWNTREND':
-                            send_signal(signals, asset, price)
+            for asset in assets['forex']:
+                data = get_data(asset)
+                signals, price = check_signals(data)
+
+                # Логируем сигналы
+                logging.info(f"Checking signals for {asset}")
+
+                # Отправляем сигнал, если он сгенерирован
+                if signals:
+                    send_signal(signals, asset, price)
             time.sleep(30)  # Пауза между запросами для всех активов
         except Exception as e:
             logging.error(f"Error: {e}")
