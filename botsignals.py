@@ -124,10 +124,10 @@ def run_bot():
                 # Отправляем сигнал, если он сгенерирован
                 if signal:
                     send_signal(signal)
-            time.sleep(0)  # Пауза между запросами для всех активов
+            time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
             logging.error(f"Error: {e}")
-            time.sleep(0)  # В случае ошибки делаем паузу
+            time.sleep(60)  # В случае ошибки делаем паузу
 
 if __name__ == "__main__":
     run_bot()
