@@ -5,7 +5,6 @@ import asyncio
 from telegram import Bot
 from telegram.constants import ParseMode
 
-# Константы для Alpha Vantage API и Telegram
 API_KEY = 'QSPA6IIRC5CGQU43'
 TELEGRAM_TOKEN = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
 CHAT_ID = '-1002243376132'
