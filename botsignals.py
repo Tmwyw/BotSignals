@@ -5,9 +5,7 @@ import pandas as pd
 import requests
 
 # Токен Telegram бота
-API_KEYS = ['KOXI6CITVOWODSHI', '746GWA2WFN18H08D', '74O1PFK2C59IB5ND', '', 
-            '', 'AA65UM6300G1Z3I1', '5EUEU0UEJY0PGTCN', 'MKCJQ7I9O9E9LM20', 
-            'NXUF3LWUVDD3A0UG', 'CBRYAJSAMK75M6NS']
+API_KEYS = ['QSPA6IIRC5CGQU43']
 
 def check_api_key(api_key):
     """
