@@ -121,6 +121,7 @@ def send_signal(signal):
 
 # Основной цикл получения данных и отправки сигналов
 def run_bot():
+    logging.info("Bot is starting...")
     while True:
         try:
             for asset in assets['forex']:
@@ -134,10 +135,10 @@ def run_bot():
                 if signal:
                     send_signal(signal)
 
-            time.sleep(300)  # Пауза между запросами для всех активов (5 минут)
+            time.sleep(10)  # Пауза между запросами для всех активов (5 минут)
         except Exception as e:
             logging.error(f"Error: {e}")
-            time.sleep(60)  # В случае ошибки делаем паузу
+            time.sleep(10)  # В случае ошибки делаем паузу
 
 if __name__ == "__main__":
     run_bot()
