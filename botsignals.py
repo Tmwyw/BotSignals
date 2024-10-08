@@ -7,6 +7,9 @@ import requests
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 
+# Хранение последних сигналов для валютных пар
+last_signals = {}
+
 async def check_api_key(api_key):
     """
     Функция для проверки работоспособности API ключа.
@@ -96,14 +99,14 @@ def check_for_signal(df, from_symbol, to_symbol):
         signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
                           f"💵Текущая цена:📈 {current_price:.4f}")
-        return signal_message
+        return 'LONG', signal_message
     elif latest_data['Short_MA'] < latest_data['Long_MA'] and previous_data['Short_MA'] >= previous_data['Long_MA']:
         # Сигнал на продажу (SHORT)
         signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
                           f"⌛️Время сделки: {time_frame}\n"
                           f"💵Текущая цена:📉 {current_price:.4f}")
-        return signal_message
-    return None
+        return 'SHORT', signal_message
+    return None, None
 
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
@@ -156,16 +159,22 @@ async def main():
                 df_with_ma = calculate_moving_averages(df)
 
                 # Проверяем наличие сигнала
-                signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                signal_type, signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+
                 if signal_message:
-                    # Отправка сигнала в оба канала и топики
-                    for channel in channels_and_topics:
-                        await notify_signals(
-                            bot,
-                            signal_message,
-                            chat_id=channel['chat_id'],
-                            message_thread_id=channel.get('message_thread_id')
-                        )
+                    # Проверяем, изменился ли сигнал для данной валютной пары
+                    if last_signals.get((from_symbol, to_symbol)) != signal_type:
+                        # Обновляем последний сигнал
+                        last_signals[(from_symbol, to_symbol)] = signal_type
+                        
+                        # Отправка сигнала в оба канала и топики
+                        for channel in channels_and_topics:
+                            await notify_signals(
+                                bot,
+                                signal_message,
+                                chat_id=channel['chat_id'],
+                                message_thread_id=channel.get('message_thread_id')
+                            )
             
             # Пауза между запросами для предотвращения превышения лимитов API
             await asyncio.sleep(5)
