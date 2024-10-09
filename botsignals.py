@@ -43,17 +43,17 @@ def calculate_moving_averages(df, timeframe):
     Рассчитываем краткосрочную и долгосрочную скользящие средние в зависимости от таймфрейма.
     """
     if timeframe == '1M':
-        short_window = 3
-        long_window = 10
+        short_window = 1  # Краткосрочная средняя на 3 свечи
+        long_window = 5  # Долгосрочная средняя на 10 свечей
     elif timeframe == '2M':
-        short_window = 5
-        long_window = 15
+        short_window = 3  # Краткосрочная средняя на 5 свечей
+        long_window = 10  # Долгосрочная средняя на 15 свечей
     elif timeframe == '3M':
-        short_window = 7
-        long_window = 20
+        short_window = 5  # Краткосрочная средняя на 7 свечей
+        long_window = 15  # Долгосрочная средняя на 20 свечей
     elif timeframe == '5M':
-        short_window = 10
-        long_window = 30
+        short_window = 7  # Краткосрочная средняя на 10 свечей
+        long_window = 25  # Долгосрочная средняя на 30 свечей
 
     # Рассчитываем скользящие средние
     df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
