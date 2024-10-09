@@ -83,36 +83,34 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     # Определение риска аналитиков (рандомно 1 или 2)
     risk_assessment = random.choice([1, 2])
     if risk_assessment == 1:
-        risk_message = "*🟡 ОЦЕНКА РИСКА - 1 🟡*"
+        risk_message = "<b>🟡 ОЦЕНКА РИСКА - 1 🟡</b>"
     else:
-        risk_message = "*🔴 ОЦЕНКА РИСКА - 2 🔴*"
+        risk_message = "<b>🔴 ОЦЕНКА РИСКА - 2 🔴</b>"
 
-    # Формирование сигнала с MarkdownV2 (исправленный вариант)
+    # Формирование сигнала с HTML-разметкой
     if short_ma > long_ma and previous_data['Short_MA'] <= previous_data['Long_MA']:
         # Сигнал на покупку (LONG)
-        signal_message = (f"_📥 ДАННЫЕ ПОЛУЧЕНЫ 📥_\n"
-                          f"_⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️_\n"
-                          f"_\(S\/MA: {short_ma:.4f}, L\/MA: {long_ma:.4f}\)_ \n\n"
+        signal_message = (f"<i>📥 ДАННЫЕ ПОЛУЧЕНЫ 📥</i>\n"
+                          f"<i>⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️</i>\n"
+                          f"<i>(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})</i> \n\n"
                           f"{risk_message}\n"
                           f"________________________________\n\n"
-                          f"*🟢 LONG ⬆️*\n\n"
-                          f"*💰 {pair_symbol} 👈🏻*\n\n"
-                          f"*⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}*")
+                          f"<b>🟢 LONG ⬆️</b>\n\n"
+                          f"<b>💰 {pair_symbol} 👈🏻</b>\n\n"
+                          f"<b>⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}</b>")
         return 'LONG', signal_message
     elif short_ma < long_ma and previous_data['Short_MA'] >= previous_data['Long_MA']:
         # Сигнал на продажу (SHORT)
-        signal_message = (f"_📥 ДАННЫЕ ПОЛУЧЕНЫ 📥_\n"
-                          f"_⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️_\n"
-                          f"_\(S\/MA: {short_ma:.4f}, L\/MA: {long_ma:.4f}\)_ \n\n"
+        signal_message = (f"<i>📥 ДАННЫЕ ПОЛУЧЕНЫ 📥</i>\n"
+                          f"<i>⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️</i>\n"
+                          f"<i>(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})</i> \n\n"
                           f"{risk_message}\n"
                           f"________________________________\n\n"
-                          f"*🔴 SHORT ⬇️*\n\n"
-                          f"*💰 {pair_symbol} 👈🏻*\n\n"
-                          f"*⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}*")
+                          f"<b>🔴 SHORT ⬇️</b>\n\n"
+                          f"<b>💰 {pair_symbol} 👈🏻</b>\n\n"
+                          f"<b>⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}</b>")
         return 'SHORT', signal_message
     return None, None
-
-
 
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
