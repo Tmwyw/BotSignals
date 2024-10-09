@@ -3,6 +3,7 @@ from telegram import Bot
 from itertools import cycle
 import pandas as pd
 import requests
+import random  # Для генерации случайной оценки риска
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
@@ -30,7 +31,7 @@ async def get_currency_data(from_symbol, to_symbol, api_key):
         df = df.sort_index()  # Сортировка по дате
         
         # Отладочный вывод данных
-        print(f"Данные для {from_symbol}/{to_symbol} успешно получены. Количество строк: {len(df)}")
+        print(f"📥 ДАННЫЕ ПОЛУЧЕНЫ 📥 для {from_symbol}/{to_symbol}")
         
         return df
     except KeyError:
@@ -42,24 +43,24 @@ def calculate_moving_averages(df, timeframe):
     Рассчитываем краткосрочную и долгосрочную скользящие средние в зависимости от таймфрейма.
     """
     if timeframe == '1M':
-        short_window = 1  # Краткосрочная средняя на 3 свечи
-        long_window = 5  # Долгосрочная средняя на 10 свечей
+        short_window = 3
+        long_window = 10
     elif timeframe == '2M':
-        short_window = 3  # Краткосрочная средняя на 5 свечей
-        long_window = 10  # Долгосрочная средняя на 15 свечей
+        short_window = 5
+        long_window = 15
     elif timeframe == '3M':
-        short_window = 5  # Краткосрочная средняя на 7 свечей
-        long_window = 15  # Долгосрочная средняя на 20 свечей
+        short_window = 7
+        long_window = 20
     elif timeframe == '5M':
-        short_window = 7  # Краткосрочная средняя на 10 свечей
-        long_window = 25  # Долгосрочная средняя на 30 свечей
+        short_window = 10
+        long_window = 30
 
     # Рассчитываем скользящие средние
     df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
     df['Long_MA'] = df['Close'].rolling(window=long_window).mean()
     
     # Отладочный вывод для скользящих средних
-    print(f"Скользящие средние для {timeframe} успешно рассчитаны: {df[['Short_MA', 'Long_MA']].tail()}")
+    print(f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️ для {timeframe}")
     
     return df
 
@@ -72,21 +73,36 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     previous_data = df.iloc[-2]  # Предыдущая строка данных
     current_price = latest_data['Close']  # Текущая цена пары
 
+    # Текущие значения скользящих средних
+    short_ma = latest_data['Short_MA']
+    long_ma = latest_data['Long_MA']
+
     # Форматируем валютную пару для сообщения
-    pair_symbol = f"{from_symbol}/{to_symbol} ({timeframe})"
+    pair_symbol = f"{from_symbol}/{to_symbol}"
+
+    # Определение риска аналитиков (рандомно 1 или 2)
+    risk_assessment = random.choice([1, 2])
+    if risk_assessment == 1:
+        risk_message = "🟡 ОЦЕНКА РИСКА АНАЛИТИКОВ ПРИСВОЕНА - 1 🟡"
+    else:
+        risk_message = "🔴 ОЦЕНКА РИСКА АНАЛИТИКОВ ПРИСВОЕНА - 2 🔴"
 
     # Проверка пересечения скользящих средних и формирование сигнала
-    if latest_data['Short_MA'] > latest_data['Long_MA'] and previous_data['Short_MA'] <= previous_data['Long_MA']:
+    if short_ma > long_ma and previous_data['Short_MA'] <= previous_data['Long_MA']:
         # Сигнал на покупку (LONG)
-        signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Таймфрейм: {timeframe}\n"
-                          f"💵Текущая цена:📈 {current_price:.4f}")
+        signal_message = (f"📥 ДАННЫЕ ПОЛУЧЕНЫ 📥\n"
+                          f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ (Short MA: {short_ma:.4f}, Long MA: {long_ma:.4f}) ⚙️\n"
+                          f"{risk_message}\n"
+                          f"🟢 LONG ⬆️\n💰{pair_symbol} 👈🏻\n"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
         return 'LONG', signal_message
-    elif latest_data['Short_MA'] < latest_data['Long_MA'] and previous_data['Short_MA'] >= previous_data['Long_MA']:
+    elif short_ma < long_ma and previous_data['Short_MA'] >= previous_data['Long_MA']:
         # Сигнал на продажу (SHORT)
-        signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Таймфрейм: {timeframe}\n"
-                          f"💵Текущая цена:📉 {current_price:.4f}")
+        signal_message = (f"📥 ДАННЫЕ ПОЛУЧЕНЫ 📥\n"
+                          f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ (Short MA: {short_ma:.4f}, Long MA: {long_ma:.4f}) ⚙️\n"
+                          f"{risk_message}\n"
+                          f"🔴 SHORT ⬇️\n💰{pair_symbol} 👈🏻\n"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
         return 'SHORT', signal_message
     return None, None
 
