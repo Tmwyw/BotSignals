@@ -25,6 +25,10 @@ async def get_currency_data(from_symbol, to_symbol, api_key):
         df = df.rename(columns={'4. close': 'Close'})  # Берем только цены закрытия
         df['Close'] = df['Close'].astype(float)
         df = df.sort_index()  # Сортировка по дате
+        
+        # Отладочный вывод данных
+        print(f"Данные для {from_symbol}/{to_symbol} успешно получены. Количество строк: {len(df)}")
+        
         return df
     except KeyError:
         print(f"Ошибка в получении данных от API ключа {api_key}: {data}")
@@ -36,6 +40,10 @@ def calculate_moving_averages(df, short_window=5, long_window=20):
     """
     df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
     df['Long_MA'] = df['Close'].rolling(window=long_window).mean()
+    
+    # Отладочный вывод для скользящих средних
+    print(f"Скользящие средние успешно рассчитаны: {df[['Short_MA', 'Long_MA']].tail()}")
+    
     return df
 
 def choose_time_frame(df):
@@ -147,6 +155,9 @@ async def main():
                                 chat_id=channel['chat_id'],
                                 message_thread_id=channel.get('message_thread_id')
                             )
+                        print(f"Отправлен сигнал {signal_type} для {from_symbol}/{to_symbol}")
+                else:
+                    print(f"Сигнал для {from_symbol}/{to_symbol} не найден.")
             
             # Пауза между запросами для предотвращения превышения лимитов API
             await asyncio.sleep(5)
