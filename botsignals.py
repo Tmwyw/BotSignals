@@ -14,7 +14,7 @@ async def get_currency_data(from_symbol, to_symbol, api_key):
     """
     Получение данных о валютной паре с Alpha Vantage API.
     """
-    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&apikey={api_key}'
+    url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
     response = requests.get(url)
     data = response.json()
 
