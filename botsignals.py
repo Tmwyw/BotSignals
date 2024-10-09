@@ -7,8 +7,11 @@ import requests
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
 
-# Хранение последних сигналов для валютных пар
+# Хранение последних сигналов для валютных пар и таймфреймов
 last_signals = {}
+
+# Таймфреймы, которые мы хотим использовать
+timeframes = ['1M', '2M', '3M', '5M']
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
     """
@@ -34,40 +37,33 @@ async def get_currency_data(from_symbol, to_symbol, api_key):
         print(f"Ошибка в получении данных от API ключа {api_key}: {data}")
         return None
 
-def calculate_moving_averages(df, short_window=5, long_window=20):
+def calculate_moving_averages(df, timeframe):
     """
-    Вычисление краткосрочной и долгосрочной скользящих средних.
+    Рассчитываем краткосрочную и долгосрочную скользящие средние в зависимости от таймфрейма.
     """
+    if timeframe == '1M':
+        short_window = 3  # Краткосрочная средняя на 3 свечи
+        long_window = 10  # Долгосрочная средняя на 10 свечей
+    elif timeframe == '2M':
+        short_window = 5  # Краткосрочная средняя на 5 свечей
+        long_window = 15  # Долгосрочная средняя на 15 свечей
+    elif timeframe == '3M':
+        short_window = 7  # Краткосрочная средняя на 7 свечей
+        long_window = 20  # Долгосрочная средняя на 20 свечей
+    elif timeframe == '5M':
+        short_window = 10  # Краткосрочная средняя на 10 свечей
+        long_window = 30  # Долгосрочная средняя на 30 свечей
+
+    # Рассчитываем скользящие средние
     df['Short_MA'] = df['Close'].rolling(window=short_window).mean()
     df['Long_MA'] = df['Close'].rolling(window=long_window).mean()
     
     # Отладочный вывод для скользящих средних
-    print(f"Скользящие средние успешно рассчитаны: {df[['Short_MA', 'Long_MA']].tail()}")
+    print(f"Скользящие средние для {timeframe} успешно рассчитаны: {df[['Short_MA', 'Long_MA']].tail()}")
     
     return df
 
-def choose_time_frame(df):
-    """
-    Определение времени сделки на основе пересечения скользящих средних.
-    """
-    last_crosses = df['Short_MA'] - df['Long_MA']  # Разница между скользящими средними
-    last_crosses_sign = last_crosses.apply(lambda x: 1 if x > 0 else -1)  # Определяем знак
-
-    # Находим индекс последнего пересечения
-    last_cross_index = (last_crosses_sign != last_crosses_sign.shift(1)).idxmax()
-    
-    # Определяем количество свечей, прошедших с момента пересечения
-    candles_since_cross = len(df) - df.index.get_loc(last_cross_index)
-
-    # Выбираем таймфрейм в зависимости от времени, прошедшего с момента пересечения
-    if candles_since_cross <= 2:
-        return "1M"
-    elif candles_since_cross <= 10:
-        return "2M"
-    else:
-        return "5M"
-
-def check_for_signal(df, from_symbol, to_symbol):
+def check_for_signal(df, from_symbol, to_symbol, timeframe):
     """
     Проверка пересечения скользящих средних для определения сигналов на покупку/продажу.
     Формирование сообщения о сигнале.
@@ -77,22 +73,19 @@ def check_for_signal(df, from_symbol, to_symbol):
     current_price = latest_data['Close']  # Текущая цена пары
 
     # Форматируем валютную пару для сообщения
-    pair_symbol = f"{from_symbol}/{to_symbol}"
-
-    # Определяем время сделки
-    time_frame = choose_time_frame(df)
+    pair_symbol = f"{from_symbol}/{to_symbol} ({timeframe})"
 
     # Проверка пересечения скользящих средних и формирование сигнала
     if latest_data['Short_MA'] > latest_data['Long_MA'] and previous_data['Short_MA'] <= previous_data['Long_MA']:
         # Сигнал на покупку (LONG)
         signal_message = (f"🔥LONG🟢🔼\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Время сделки: {time_frame}\n"
+                          f"⌛️Таймфрейм: {timeframe}\n"
                           f"💵Текущая цена:📈 {current_price:.4f}")
         return 'LONG', signal_message
     elif latest_data['Short_MA'] < latest_data['Long_MA'] and previous_data['Short_MA'] >= previous_data['Long_MA']:
         # Сигнал на продажу (SHORT)
         signal_message = (f"🔥SHORT🔴🔽\n🔥#{pair_symbol}☝️\n"
-                          f"⌛️Время сделки: {time_frame}\n"
+                          f"⌛️Таймфрейм: {timeframe}\n"
                           f"💵Текущая цена:📉 {current_price:.4f}")
         return 'SHORT', signal_message
     return None, None
@@ -135,29 +128,32 @@ async def main():
             df = await get_currency_data(from_symbol, to_symbol, api_key)
 
             if df is not None:
-                # Рассчитываем скользящие средние
-                df_with_ma = calculate_moving_averages(df)
+                # Проходим по каждому таймфрейму
+                for timeframe in timeframes:
+                    # Рассчитываем скользящие средние для текущего таймфрейма
+                    df_with_ma = calculate_moving_averages(df, timeframe)
 
-                # Проверяем наличие сигнала
-                signal_type, signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol)
+                    # Проверяем наличие сигнала
+                    signal_type, signal_message = check_for_signal(df_with_ma, from_symbol, to_symbol, timeframe)
 
-                if signal_message:
-                    # Проверяем, изменился ли сигнал для данной валютной пары
-                    if last_signals.get((from_symbol, to_symbol)) != signal_type:
-                        # Обновляем последний сигнал
-                        last_signals[(from_symbol, to_symbol)] = signal_type
-                        
-                        # Отправка сигнала в оба канала и топики
-                        for channel in channels_and_topics:
-                            await notify_signals(
-                                bot,
-                                signal_message,
-                                chat_id=channel['chat_id'],
-                                message_thread_id=channel.get('message_thread_id')
-                            )
-                        print(f"Отправлен сигнал {signal_type} для {from_symbol}/{to_symbol}")
-                else:
-                    print(f"Сигнал для {from_symbol}/{to_symbol} не найден.")
+                    if signal_message:
+                        # Проверяем, изменился ли сигнал для данной валютной пары и таймфрейма
+                        signal_key = (from_symbol, to_symbol, timeframe)
+                        if last_signals.get(signal_key) != signal_type:
+                            # Обновляем последний сигнал
+                            last_signals[signal_key] = signal_type
+                            
+                            # Отправка сигнала в оба канала и топики
+                            for channel in channels_and_topics:
+                                await notify_signals(
+                                    bot,
+                                    signal_message,
+                                    chat_id=channel['chat_id'],
+                                    message_thread_id=channel.get('message_thread_id')
+                                )
+                            print(f"Отправлен сигнал {signal_type} для {from_symbol}/{to_symbol} на таймфрейме {timeframe}")
+                    else:
+                        print(f"Сигнал для {from_symbol}/{to_symbol} на таймфрейме {timeframe} не найден.")
             
             # Пауза между запросами для предотвращения превышения лимитов API
             await asyncio.sleep(5)
