@@ -26,7 +26,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Загрузка шрифтов
+    # Используем стандартный шрифт PIL
     font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)  # Шрифт для LONG/SHORT
     font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)   # Шрифт для валютной пары
 
@@ -44,7 +44,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
 
     # Рисование текста
     draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
-    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
+    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) если signal_type == 'LONG' иначе (255, 0, 0))  # Зелёный для LONG, красный для SHORT
 
     # Проверка и создание директории для сохранения
     output_dir = "/mnt/data/"
