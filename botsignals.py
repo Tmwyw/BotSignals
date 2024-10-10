@@ -26,9 +26,9 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Использование стандартных шрифтов для текста
-    font_large = ImageFont.load_default()
-    font_small = ImageFont.load_default()
+    # Загрузка шрифтов
+    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)  # Шрифт для LONG/SHORT
+    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)   # Шрифт для валютной пары
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
