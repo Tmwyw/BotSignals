@@ -21,30 +21,55 @@ price_threshold_percentage = 0.002  # Порог изменения цены 0.5
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
+from PIL import Image, ImageDraw, ImageFont
+
 def generate_image(from_symbol, to_symbol, signal_type):
-    # Создание изображения с бежевым фоном
-    img = Image.new('RGB', (600, 400), color=(238, 224, 200))  # Бежевый цвет фона
+    # Размер изображения
+    width, height = 600, 400
+    img = Image.new('RGB', (width, height), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Используем встроенный шрифт по умолчанию
-    font_large = ImageFont.load_default()  # Встроенный шрифт вместо DejaVuSans-Bold
-    font_small = ImageFont.load_default()
+    # Функция для динамического определения максимального размера шрифта
+    def get_optimal_font_size(draw, text, max_width, max_height, font_path=None):
+        # Начальный размер шрифта
+        font_size = 10
+        font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
+
+        # Увеличиваем размер шрифта до тех пор, пока текст вписывается в указанные границы
+        while True:
+            text_width, text_height = draw.textsize(text, font=font)
+            if text_width >= max_width or text_height >= max_height:
+                break
+            font_size += 1
+            font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
+
+        return font
+
+    # Загрузка шрифта (используем встроенный шрифт по умолчанию или указанный системный шрифт)
+    font_path = "arial.ttf"  # Если есть доступ к системе, можно указать конкретный шрифт, например, arial.ttf
+    try:
+        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 50, height // 2, font_path)
+        font_small = get_optimal_font_size(draw, signal_type, width - 50, height // 4, font_path)
+    except IOError:
+        # Если шрифт не доступен, используем встроенный шрифт по умолчанию
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
     text_small = signal_type
 
-    # Размер шрифта
-    font_size_large = 250  # Увеличен шрифт для больших текстов
-    font_size_small = 225  # Увеличен шрифт для сигнала
+    # Получаем размеры текста
+    text_large_width, text_large_height = draw.textsize(text_large, font=font_large)
+    text_small_width, text_small_height = draw.textsize(text_small, font=font_small)
 
     # Позиции текста
-    position_large = (150, 100)  # Позиция для текста с валютной парой
-    position_small = (150, 200)  # Позиция для текста LONG/SHORT
+    position_large = ((width - text_large_width) // 2, (height - text_large_height) // 3)  # Центр текста для валютной пары
+    position_small = ((width - text_small_width) // 2, (height - text_small_height) // 1.5)  # Центр текста для LONG/SHORT
 
-    # Рисование текста с увеличенными шрифтами
-    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
-    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
+    # Рисование текста на изображении
+    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст для валютной пары
+    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Цвет текста LONG/SHORT
 
     # Проверка и создание директории для сохранения
     output_dir = "/mnt/data/"
@@ -104,7 +129,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     long_ma = latest_data['Long_MA']
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
-    risk_assessment = random.choice([1, 2, 3])
+    risk_assessment = random.choice([1, 2])
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
 
     if short_ma > long_ma:
@@ -131,16 +156,12 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe], image_path
     return None, None, None, None, None
 
-def mirror_signal(signal_type, signal_message):
-    """Функция для зеркалирования сигнала с заменой смайликов."""
+def mirror_signal(signal_type):
+    """Функция для зеркалирования сигнала"""
     if signal_type == 'LONG':
-        mirrored_signal_type = 'SHORT'
-        mirrored_signal_message = signal_message.replace('🟢LONG🟢', '🔴SHORT🔴')
+        return 'SHORT'
     elif signal_type == 'SHORT':
-        mirrored_signal_type = 'LONG'
-        mirrored_signal_message = signal_message.replace('🔴SHORT🔴', '🟢LONG🟢')
-    
-    return mirrored_signal_type, mirrored_signal_message
+        return 'LONG'
 
 async def notify_signals(bot, signal_message, image_path, chat_id, message_thread_id=None):
     try:
