@@ -35,8 +35,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
     text_small = signal_type
 
     # Размер шрифта
-    font_size_large = 120  # Увеличен шрифт для больших текстов
-    font_size_small = 100  # Увеличен шрифт для сигнала
+    font_size_large = 250  # Увеличен шрифт для больших текстов
+    font_size_small = 225  # Увеличен шрифт для сигнала
 
     # Позиции текста
     position_large = (150, 100)  # Позиция для текста с валютной парой
@@ -131,12 +131,16 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe], image_path
     return None, None, None, None, None
 
-def mirror_signal(signal_type):
-    """Функция для зеркалирования сигнала"""
+def mirror_signal(signal_type, signal_message):
+    """Функция для зеркалирования сигнала с заменой смайликов."""
     if signal_type == 'LONG':
-        return 'SHORT'
+        mirrored_signal_type = 'SHORT'
+        mirrored_signal_message = signal_message.replace('🟢LONG🟢', '🔴SHORT🔴')
     elif signal_type == 'SHORT':
-        return 'LONG'
+        mirrored_signal_type = 'LONG'
+        mirrored_signal_message = signal_message.replace('🔴SHORT🔴', '🟢LONG🟢')
+    
+    return mirrored_signal_type, mirrored_signal_message
 
 async def notify_signals(bot, signal_message, image_path, chat_id, message_thread_id=None):
     try:
