@@ -31,28 +31,12 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img = Image.new('RGB', (width, height), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Функция для динамического определения максимального размера шрифта
-    def get_optimal_font_size(draw, text, max_width, max_height, font_path=None):
-        # Начальный размер шрифта
-        font_size = 10
-        font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
+    # Попробуем использовать более крупный шрифт
+    font_path = "arial.ttf"  # Заменить на корректный путь к шрифту, если он доступен в системе
 
-        # Увеличиваем размер шрифта до тех пор, пока текст вписывается в указанные границы
-        while True:
-            text_bbox = draw.textbbox((0, 0), text, font=font)
-            text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
-            if text_width >= max_width or text_height >= max_height:
-                break
-            font_size += 1
-            font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
-
-        return font
-
-    # Загрузка шрифта (используем встроенный шрифт по умолчанию или указанный системный шрифт)
-    font_path = "arial.ttf"  # Если есть доступ к системе, можно указать конкретный шрифт, например, arial.ttf
     try:
-        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 5000, height // 2, font_path)
-        font_small = get_optimal_font_size(draw, signal_type, width - 4500, height // 4, font_path)
+        font_large = ImageFont.truetype(font_path, 450)  # Поменяй размер на подходящий
+        font_small = ImageFont.truetype(font_path, 400)
     except IOError:
         # Если шрифт не доступен, используем встроенный шрифт по умолчанию
         font_large = ImageFont.load_default()
@@ -62,12 +46,9 @@ def generate_image(from_symbol, to_symbol, signal_type):
     text_large = f"{from_symbol}/{to_symbol}"
     text_small = signal_type
 
-    # Получаем размеры текста с использованием textbbox()
-    text_large_bbox = draw.textbbox((0, 0), text_large, font=font_large)
-    text_large_width, text_large_height = text_large_bbox[2] - text_large_bbox[0], text_large_bbox[3] - text_large_bbox[1]
-
-    text_small_bbox = draw.textbbox((0, 0), text_small, font=font_small)
-    text_small_width, text_small_height = text_small_bbox[2] - text_small_bbox[0], text_small_bbox[3] - text_small_bbox[1]
+    # Получаем размеры текста
+    text_large_width, text_large_height = draw.textsize(text_large, font=font_large)
+    text_small_width, text_small_height = draw.textsize(text_small, font=font_small)
 
     # Позиции текста
     position_large = ((width - text_large_width) // 2, (height - text_large_height) // 3)  # Центр текста для валютной пары
