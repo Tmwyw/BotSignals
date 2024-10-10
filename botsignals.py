@@ -57,41 +57,39 @@ def calculate_moving_averages(df, timeframe):
     print(f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️ для {timeframe}")
     return df
 
-def generate_image(from_symbol, to_symbol, signal_type):
-    """
-    Генерация изображения с валютной парой и направлением (LONG/SHORT)
-    """
-    dark_beige_color = (238, 232, 205)  # Темный бежевый цвет фона
-    img = Image.new('RGB', (500, 300), color=dark_beige_color)
+def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
+    # Создание изображения с бежевым фоном
+    img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Используем стандартный шрифт Pillow
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    font_large = ImageFont.truetype(font_path, 70)
-    font_medium = ImageFont.truetype(font_path, 40)
+    # Определение шрифтов для текста
+    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)  # Увеличенный шрифт для текста
+    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)  # Увеличенный шрифт для сигнала
 
-    # Текст
-    pair_text = f"{from_symbol}/{to_symbol}"
-    signal_text = signal_type
+    # Тексты для пары валют и сигнала
+    text_large = f"{from_symbol}/{to_symbol}"
+    text_small = signal_type
 
-    # Получаем размеры текста
-    pair_text_width, pair_text_height = draw.textsize(pair_text, font=font_large)
-    signal_text_width, signal_text_height = draw.textsize(signal_text, font=font_medium)
-    
-    total_text_height = pair_text_height + signal_text_height + 20
+    # Определение позиции текста для выравнивания по центру
+    text_large_size = draw.textbbox((0, 0), text_large, font=font_large)
+    text_small_size = draw.textbbox((0, 0), text_small, font=font_small)
 
-    # Вычисляем положение для центрирования
-    pair_text_x = (img.width - pair_text_width) // 2
-    signal_text_x = (img.width - signal_text_width) // 2
-    top_margin = (img.height - total_text_height) // 2
+    # Позиции для текста
+    position_large = ((512 - text_large_size[2]) // 2, (256 - text_large_size[3]) // 2 - 50)
+    position_small = ((512 - text_small_size[2]) // 2, (256 - text_small_size[3]) // 2 + 50)
 
-    # Рисуем текст на изображении
-    draw.text((pair_text_x, top_margin), pair_text, font=font_large, fill=(0, 0, 0))
-    draw.text((signal_text_x, top_margin + pair_text_height + 20), signal_text, font=font_medium, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))
+    # Рисование текста
+    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
+    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
 
-    image_path = f"/mnt/data/{from_symbol}_{to_symbol}_{signal_type}.png"
+    # Сохранение изображения
+    image_path = "/mnt/data/even_bigger_text_image.png"
     img.save(image_path)
+
     return image_path
+
+# Пример использования
+image_path = generate_image_with_even_bigger_text("USD", "EUR", "LONG")
 
 def check_for_signal(df, from_symbol, to_symbol, timeframe):
     latest_data = df.iloc[-1]
