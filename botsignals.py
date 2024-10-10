@@ -25,6 +25,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 from PIL import Image, ImageDraw, ImageFont
 
+from PIL import Image, ImageDraw, ImageFont
+
 def generate_image(from_symbol, to_symbol, signal_type):
     # Размер изображения
     width, height = 600, 400
@@ -43,7 +45,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
             text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
             if text_width >= max_width or text_height >= max_height:
                 break
-            font_size += 1
+            font_size += 5  # Увеличиваем на 5 для быстрого роста
             font = ImageFont.truetype(font_path, font_size) if font_path else ImageFont.load_default()
 
         return font
@@ -89,6 +91,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img.save(image_path)
 
     return image_path
+
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
     url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
