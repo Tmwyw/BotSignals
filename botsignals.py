@@ -64,8 +64,8 @@ def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
     draw = ImageDraw.Draw(img)
 
     try:
-        # Определение шрифтов для текста, используя шрифты по умолчанию
-        font_large = ImageFont.load_default()  # Заменим проблемный шрифт на встроенный шрифт
+        # Использование стандартных шрифтов для текста
+        font_large = ImageFont.load_default()  # Стандартный шрифт
         font_small = ImageFont.load_default()
     except IOError:
         print("Ошибка загрузки шрифта.")
@@ -87,8 +87,15 @@ def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
     draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
     draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
 
+    # Проверка и создание директории для сохранения
+    output_dir = "/mnt/data/"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Путь для сохранения изображения
+    image_path = os.path.join(output_dir, "even_bigger_text_image.png")
+
     # Сохранение изображения
-    image_path = "/mnt/data/even_bigger_text_image.png"
     img.save(image_path)
 
     return image_path
@@ -96,7 +103,6 @@ def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
 # Пример использования
 image_path = generate_image_with_even_bigger_text("USD", "EUR", "LONG")
 print(f"Изображение сохранено в: {image_path}")
-
 def check_for_signal(df, from_symbol, to_symbol, timeframe):
     latest_data = df.iloc[-1]
     current_price = latest_data['Close']
