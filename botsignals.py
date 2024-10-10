@@ -14,7 +14,7 @@ last_signals = {}
 
 # Тайм лимит для отправки сигналов (10 минут = 600 секунд)
 time_limit = 600  # Время в секундах между отправкой сигналов для одной валютной пары
-price_threshold_percentage = 0.005  # Порог изменения цены 0.5%
+price_threshold_percentage = 0.002  # Порог изменения цены 0.5%
 
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
@@ -65,25 +65,27 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
     risk_assessment = random.choice([1, 2])
-    risk_message = "🟡 ОЦЕНКА РИСКА - 1 🟡" if risk_assessment == 1 else "🔴 ОЦЕНКА РИСКА - 2 🔴"
+    risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
 
     if short_ma > long_ma:
-        signal_message = (f"📥 ДАННЫЕ ПОЛУЧЕНЫ 📥\n\n"
-                          f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️\n"
-                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n\n"
-                          f"🟢 LONG ⬆️\n\n"
-                          f"💰 {pair_symbol} 👈🏻\n\n"
-                          f"⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}\n\n"
-                          f"{risk_message}")
+        signal_message = (f"📊 Данные получены:\n"
+                          f"⚙️ Скользящие рассчитаны\n"
+                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n"
+                          f"{risk_message}\n"
+                          f"➖➖➖➖➖➖➖➖➖➖\n"
+                          f"💰{pair_symbol}💰\n\n"
+                          f"🟢LONG🟢\n\n"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
         return 'LONG', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     elif short_ma < long_ma:
-        signal_message = (f"📥 ДАННЫЕ ПОЛУЧЕНЫ 📥\n\n"
-                          f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️\n"
-                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n\n"
-                          f"🔴 SHORT ⬇️\n\n"
-                          f"💰 {pair_symbol} 👈🏻\n\n"
-                          f"⌛️ ВРЕМЯ СДЕЛКИ: {timeframe}\n\n"
-                          f"{risk_message}")
+        signal_message = (f"📊 Данные получены:\n"
+                          f"⚙️ Скользящие рассчитаны\n"
+                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n"
+                          f"{risk_message}\n"
+                          f"➖➖➖➖➖➖➖➖➖➖\n"
+                          f"💰{pair_symbol}💰\n\n"
+                          f"🔴SHORT🔴\n\n"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     return None, None, None, None
 
