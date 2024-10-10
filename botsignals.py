@@ -57,14 +57,19 @@ def calculate_moving_averages(df, timeframe):
     print(f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️ для {timeframe}")
     return df
 
+
 def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
     # Создание изображения с бежевым фоном
     img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Определение шрифтов для текста
-    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)  # Увеличенный шрифт для текста
-    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)  # Увеличенный шрифт для сигнала
+    try:
+        # Определение шрифтов для текста, используя шрифты по умолчанию
+        font_large = ImageFont.load_default()  # Заменим проблемный шрифт на встроенный шрифт
+        font_small = ImageFont.load_default()
+    except IOError:
+        print("Ошибка загрузки шрифта.")
+        return None
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
@@ -90,6 +95,7 @@ def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
 
 # Пример использования
 image_path = generate_image_with_even_bigger_text("USD", "EUR", "LONG")
+print(f"Изображение сохранено в: {image_path}")
 
 def check_for_signal(df, from_symbol, to_symbol, timeframe):
     latest_data = df.iloc[-1]
