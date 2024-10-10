@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 import random
 import time
+import os  # Добавляем импорт os для работы с файловой системой
 from PIL import Image, ImageDraw, ImageFont
 
 # Токен Telegram бота
