@@ -35,14 +35,14 @@ def generate_image(from_symbol, to_symbol, signal_type):
     text_small = signal_type
 
     # Размер шрифта
-    font_size_large = 50  # Увеличен шрифт для больших текстов
-    font_size_small = 40  # Увеличен шрифт для сигнала
+    font_size_large = 120  # Увеличен шрифт для больших текстов
+    font_size_small = 100  # Увеличен шрифт для сигнала
 
     # Позиции текста
     position_large = (150, 100)  # Позиция для текста с валютной парой
     position_small = (150, 200)  # Позиция для текста LONG/SHORT
 
-    # Рисование текста
+    # Рисование текста с увеличенными шрифтами
     draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
     draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
 
