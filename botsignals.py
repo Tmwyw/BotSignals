@@ -92,7 +92,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
         # Сигнал на покупку (LONG)
         signal_message = (f"📥 *ДАННЫЕ ПОЛУЧЕНЫ* 📥\n\n"
                           f"⚙️ *СКОЛЬЗЯЩИЕ РАССЧИТАНЫ* ⚙️\n"
-                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n\n"
+                          f"\(S\/MA: {short_ma:.4f}, L\/MA: {long_ma:.4f}\)\n\n"
                           f"🟢 *LONG ⬆️*\n\n"
                           f"💰 *{pair_symbol} 👈🏻*\n\n"
                           f"⌛️ *ВРЕМЯ СДЕЛКИ: {timeframe}*\n\n"
@@ -102,13 +102,14 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
         # Сигнал на продажу (SHORT)
         signal_message = (f"📥 *ДАННЫЕ ПОЛУЧЕНЫ* 📥\n\n"
                           f"⚙️ *СКОЛЬЗЯЩИЕ РАССЧИТАНЫ* ⚙️\n"
-                          f"(S/MA: {short_ma:.4f}, L/MA: {long_ma:.4f})\n\n"
+                          f"\(S\/MA: {short_ma:.4f}, L\/MA: {long_ma:.4f}\)\n\n"
                           f"🔴 *SHORT ⬇️*\n\n"
                           f"💰 *{pair_symbol} 👈🏻*\n\n"
                           f"⌛️ *ВРЕМЯ СДЕЛКИ: {timeframe}*\n\n"
                           f"{risk_message}")
         return 'SHORT', signal_message
     return None, None
+
 
 
 
