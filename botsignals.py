@@ -26,29 +26,21 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img = Image.new('RGB', (600, 400), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Загрузка увеличенного шрифта
-    font_large = ImageFont.load_default()  # Используем стандартный шрифт
+    # Используем встроенный шрифт по умолчанию
+    font_large = ImageFont.load_default()  # Встроенный шрифт вместо DejaVuSans-Bold
     font_small = ImageFont.load_default()
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
     text_small = signal_type
 
-    # Определение размера текста (руководствуемся, что на изображении почти весь текст будет занимать поле)
-    font_size_large = 120  # Размер шрифта для валютной пары
-    font_size_small = 100  # Размер шрифта для сигнала
+    # Размер шрифта
+    font_size_large = 50  # Увеличен шрифт для больших текстов
+    font_size_small = 40  # Увеличен шрифт для сигнала
 
-    # Рисуем текст большими размерами
-    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size_large)
-    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size_small)
-
-    # Определение позиции текста для выравнивания по центру
-    text_large_size = draw.textbbox((0, 0), text_large, font=font_large)
-    text_small_size = draw.textbbox((0, 0), text_small, font=font_small)
-
-    # Позиции для текста
-    position_large = ((600 - text_large_size[2]) // 2, (400 - text_large_size[3]) // 2 - 50)
-    position_small = ((600 - text_small_size[2]) // 2, (400 - text_small_size[3]) // 2 + 50)
+    # Позиции текста
+    position_large = (150, 100)  # Позиция для текста с валютной парой
+    position_small = (150, 200)  # Позиция для текста LONG/SHORT
 
     # Рисование текста
     draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
