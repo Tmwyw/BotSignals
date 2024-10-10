@@ -1,3 +1,5 @@
+import os
+from PIL import Image, ImageDraw, ImageFont
 import asyncio
 from telegram import Bot
 from itertools import cycle
@@ -5,8 +7,6 @@ import pandas as pd
 import requests
 import random
 import time
-import os  # Добавляем импорт os для работы с файловой системой
-from PIL import Image, ImageDraw, ImageFont
 
 # Токен Telegram бота
 API_KEYS = ['QSPA6IIRC5CGQU43']
@@ -16,10 +16,48 @@ last_signals = {}
 
 # Тайм лимит для отправки сигналов (10 минут = 600 секунд)
 time_limit = 600  # Время в секундах между отправкой сигналов для одной валютной пары
-price_threshold_percentage = 0.002  # Порог изменения цены 0.2%
+price_threshold_percentage = 0.002  # Порог изменения цены 0.5%
 
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
+
+def generate_image(from_symbol, to_symbol, signal_type):
+    # Создание изображения с бежевым фоном
+    img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
+    draw = ImageDraw.Draw(img)
+
+    # Использование стандартных шрифтов для текста
+    font_large = ImageFont.load_default()
+    font_small = ImageFont.load_default()
+
+    # Тексты для пары валют и сигнала
+    text_large = f"{from_symbol}/{to_symbol}"
+    text_small = signal_type
+
+    # Определение позиции текста для выравнивания по центру
+    text_large_size = draw.textbbox((0, 0), text_large, font=font_large)
+    text_small_size = draw.textbbox((0, 0), text_small, font=font_small)
+
+    # Позиции для текста
+    position_large = ((512 - text_large_size[2]) // 2, (256 - text_large_size[3]) // 2 - 50)
+    position_small = ((512 - text_small_size[2]) // 2, (256 - text_small_size[3]) // 2 + 50)
+
+    # Рисование текста
+    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
+    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
+
+    # Проверка и создание директории для сохранения
+    output_dir = "/mnt/data/"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Путь для сохранения изображения
+    image_path = os.path.join(output_dir, f"{from_symbol}_{to_symbol}_{signal_type}.png")
+
+    # Сохранение изображения
+    img.save(image_path)
+
+    return image_path
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
     url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
@@ -58,52 +96,6 @@ def calculate_moving_averages(df, timeframe):
     print(f"⚙️ СКОЛЬЗЯЩИЕ РАССЧИТАНЫ ⚙️ для {timeframe}")
     return df
 
-
-def generate_image_with_even_bigger_text(from_symbol, to_symbol, signal_type):
-    # Создание изображения с бежевым фоном
-    img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
-    draw = ImageDraw.Draw(img)
-
-    try:
-        # Использование стандартных шрифтов для текста
-        font_large = ImageFont.load_default()  # Стандартный шрифт
-        font_small = ImageFont.load_default()
-    except IOError:
-        print("Ошибка загрузки шрифта.")
-        return None
-
-    # Тексты для пары валют и сигнала
-    text_large = f"{from_symbol}/{to_symbol}"
-    text_small = signal_type
-
-    # Определение позиции текста для выравнивания по центру
-    text_large_size = draw.textbbox((0, 0), text_large, font=font_large)
-    text_small_size = draw.textbbox((0, 0), text_small, font=font_small)
-
-    # Позиции для текста
-    position_large = ((512 - text_large_size[2]) // 2, (256 - text_large_size[3]) // 2 - 50)
-    position_small = ((512 - text_small_size[2]) // 2, (256 - text_small_size[3]) // 2 + 50)
-
-    # Рисование текста
-    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
-    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
-
-    # Проверка и создание директории для сохранения
-    output_dir = "/mnt/data/"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Путь для сохранения изображения
-    image_path = os.path.join(output_dir, "even_bigger_text_image.png")
-
-    # Сохранение изображения
-    img.save(image_path)
-
-    return image_path
-
-# Пример использования
-image_path = generate_image_with_even_bigger_text("USD", "EUR", "LONG")
-print(f"Изображение сохранено в: {image_path}")
 def check_for_signal(df, from_symbol, to_symbol, timeframe):
     latest_data = df.iloc[-1]
     current_price = latest_data['Close']
