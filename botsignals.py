@@ -27,7 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 def generate_image(from_symbol, to_symbol, signal_type):
     # Размер изображения
-    width, height = 200, 100
+    width, height = 600, 400
     img = Image.new('RGB', (width, height), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
@@ -51,8 +51,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
     # Загрузка шрифта (используем встроенный шрифт по умолчанию или указанный системный шрифт)
     font_path = "arial.ttf"  # Если есть доступ к системе, можно указать конкретный шрифт, например, arial.ttf
     try:
-        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 50, height // 2, font_path)
-        font_small = get_optimal_font_size(draw, signal_type, width - 50, height // 4, font_path)
+        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 500, height // 2, font_path)
+        font_small = get_optimal_font_size(draw, signal_type, width - 450, height // 4, font_path)
     except IOError:
         # Если шрифт не доступен, используем встроенный шрифт по умолчанию
         font_large = ImageFont.load_default()
