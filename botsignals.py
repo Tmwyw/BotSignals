@@ -44,7 +44,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
 
     # Рисование текста
     draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст
-    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) если signal_type == 'LONG' иначе (255, 0, 0))  # Зелёный для LONG, красный для SHORT
+    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Зелёный для LONG, красный для SHORT
+
 
     # Проверка и создание директории для сохранения
     output_dir = "/mnt/data/"
