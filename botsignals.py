@@ -111,14 +111,19 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     return None, None
 
 
-
-
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     """
     Функция отправки сигнала в Telegram через бота.
     message_thread_id — используется для отправки сообщений в конкретный топик.
     """
-    await bot.send_message(chat_id=chat_id, text=signal_message, parse_mode="MarkdownV2", message_thread_id=message_thread_id)
+    try:
+        print(f"Отправка сообщения в чат {chat_id} с топиком {message_thread_id}")
+        print(f"Сообщение: {signal_message}")
+        
+        await bot.send_message(chat_id=chat_id, text=signal_message, parse_mode="MarkdownV2", message_thread_id=message_thread_id)
+        await asyncio.sleep(1)  # Задержка перед следующим запросом
+    except Exception as e:
+        print(f"Ошибка при отправке сообщения: {e}")
 
 
 async def main():
