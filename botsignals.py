@@ -21,18 +21,26 @@ price_threshold_percentage = 0.002  # Порог изменения цены 0.5
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
-def generate_image(from_symbol, to_symbol, signal_type, risk_assessment):
+def generate_image(from_symbol, to_symbol, signal_type):
     # Создание изображения с бежевым фоном
     img = Image.new('RGB', (600, 400), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Используем встроенный шрифт по умолчанию
-    font_large = ImageFont.load_default()
+    # Загрузка увеличенного шрифта
+    font_large = ImageFont.load_default()  # Используем стандартный шрифт
     font_small = ImageFont.load_default()
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
-    text_small = f"{signal_type} Риск: {risk_assessment}"
+    text_small = signal_type
+
+    # Определение размера текста (руководствуемся, что на изображении почти весь текст будет занимать поле)
+    font_size_large = 120  # Размер шрифта для валютной пары
+    font_size_small = 100  # Размер шрифта для сигнала
+
+    # Рисуем текст большими размерами
+    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size_large)
+    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size_small)
 
     # Определение позиции текста для выравнивания по центру
     text_large_size = draw.textbbox((0, 0), text_large, font=font_large)
@@ -104,7 +112,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     long_ma = latest_data['Long_MA']
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
-    risk_assessment = random.choice([1, 2, 3])  # Добавляем возможность выбора 1, 2 или 3
+    risk_assessment = random.choice([1, 2, 3])
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
 
     if short_ma > long_ma:
@@ -116,7 +124,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"💰{pair_symbol}💰\n\n"
                           f"🟢LONG🟢\n\n"
                           f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
-        image_path = generate_image(from_symbol, to_symbol, 'LONG', risk_assessment)
+        image_path = generate_image(from_symbol, to_symbol, 'LONG')
         return 'LONG', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe], image_path
     elif short_ma < long_ma:
         signal_message = (f"📊 Данные получены:\n"
@@ -127,16 +135,16 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"💰{pair_symbol}💰\n\n"
                           f"🔴SHORT🔴\n\n"
                           f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
-        image_path = generate_image(from_symbol, to_symbol, 'SHORT', risk_assessment)
+        image_path = generate_image(from_symbol, to_symbol, 'SHORT')
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe], image_path
     return None, None, None, None, None
 
 def mirror_signal(signal_type):
     """Функция для зеркалирования сигнала"""
     if signal_type == 'LONG':
-        return 'SHORT', '🔴SHORT🔴'
+        return 'SHORT'
     elif signal_type == 'SHORT':
-        return 'LONG', '🟢LONG🟢'
+        return 'LONG'
 
 async def notify_signals(bot, signal_message, image_path, chat_id, message_thread_id=None):
     try:
@@ -209,9 +217,9 @@ async def main():
                         )
                         
                         # Зеркальный сигнал для второго канала
-                        mirrored_signal_type, mirrored_emoji_signal = mirror_signal(signal_type)
-                        mirrored_image_path = generate_image(from_symbol, to_symbol, mirrored_signal_type, random.choice([1, 2, 3]))
-                        mirrored_signal_message = signal_message.replace(signal_type, mirrored_signal_type).replace(signal_message.split('\n')[7], mirrored_emoji_signal)
+                        mirrored_signal_type = mirror_signal(signal_type)
+                        mirrored_image_path = generate_image(from_symbol, to_symbol, mirrored_signal_type)
+                        mirrored_signal_message = signal_message.replace(signal_type, mirrored_signal_type)
 
                         # Отправляем зеркальный сигнал во второй канал
                         await notify_signals(
