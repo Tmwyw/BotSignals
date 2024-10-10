@@ -23,6 +23,8 @@ timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
 from PIL import Image, ImageDraw, ImageFont
 
+from PIL import Image, ImageDraw, ImageFont
+
 def generate_image(from_symbol, to_symbol, signal_type):
     # Размер изображения
     width, height = 600, 400
@@ -37,7 +39,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
 
         # Увеличиваем размер шрифта до тех пор, пока текст вписывается в указанные границы
         while True:
-            text_width, text_height = draw.textsize(text, font=font)
+            text_bbox = draw.textbbox((0, 0), text, font=font)
+            text_width, text_height = text_bbox[2] - text_bbox[0], text_bbox[3] - text_bbox[1]
             if text_width >= max_width or text_height >= max_height:
                 break
             font_size += 1
@@ -59,9 +62,12 @@ def generate_image(from_symbol, to_symbol, signal_type):
     text_large = f"{from_symbol}/{to_symbol}"
     text_small = signal_type
 
-    # Получаем размеры текста
-    text_large_width, text_large_height = draw.textsize(text_large, font=font_large)
-    text_small_width, text_small_height = draw.textsize(text_small, font=font_small)
+    # Получаем размеры текста с использованием textbbox()
+    text_large_bbox = draw.textbbox((0, 0), text_large, font=font_large)
+    text_large_width, text_large_height = text_large_bbox[2] - text_large_bbox[0], text_large_bbox[3] - text_large_bbox[1]
+
+    text_small_bbox = draw.textbbox((0, 0), text_small, font=font_small)
+    text_small_width, text_small_height = text_small_bbox[2] - text_small_bbox[0], text_small_bbox[3] - text_small_bbox[1]
 
     # Позиции текста
     position_large = ((width - text_large_width) // 2, (height - text_large_height) // 3)  # Центр текста для валютной пары
