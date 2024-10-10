@@ -23,12 +23,12 @@ timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
 def generate_image(from_symbol, to_symbol, signal_type):
     # Создание изображения с бежевым фоном
-    img = Image.new('RGB', (512, 256), color=(238, 224, 200))  # Бежевый цвет фона
+    img = Image.new('RGB', (600, 400), color=(238, 224, 200))  # Бежевый цвет фона
     draw = ImageDraw.Draw(img)
 
-    # Используем стандартный шрифт PIL
-    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)  # Шрифт для LONG/SHORT
-    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 80)   # Шрифт для валютной пары
+       # Используем встроенный шрифт по умолчанию
+    font_large = ImageFont.load_default()  # Используем встроенный шрифт вместо DejaVuSans-Bold.ttf
+    font_small = ImageFont.load_default()
 
     # Тексты для пары валют и сигнала
     text_large = f"{from_symbol}/{to_symbol}"
