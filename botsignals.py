@@ -51,8 +51,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
     # Загрузка шрифта (используем встроенный шрифт по умолчанию или указанный системный шрифт)
     font_path = "arial.ttf"  # Если есть доступ к системе, можно указать конкретный шрифт, например, arial.ttf
     try:
-        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 500, height // 2, font_path)
-        font_small = get_optimal_font_size(draw, signal_type, width - 450, height // 4, font_path)
+        font_large = get_optimal_font_size(draw, f"{from_symbol}/{to_symbol}", width - 5000, height // 2, font_path)
+        font_small = get_optimal_font_size(draw, signal_type, width - 4500, height // 4, font_path)
     except IOError:
         # Если шрифт не доступен, используем встроенный шрифт по умолчанию
         font_large = ImageFont.load_default()
