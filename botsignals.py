@@ -15,7 +15,7 @@ last_signals = {}
 
 # Тайм лимит для отправки сигналов (10 минут = 600 секунд)
 time_limit = 600  # Время в секундах между отправкой сигналов для одной валютной пары
-price_threshold_percentage = 0.002  # Порог изменения цены 0.5%
+price_threshold_percentage = 0.002  # Порог изменения цены 0.2%
 
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
@@ -65,7 +65,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
     img = Image.new('RGB', (500, 300), color=dark_beige_color)
     draw = ImageDraw.Draw(img)
 
-    # Настройка шрифтов
+    # Используем стандартный шрифт Pillow
     font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
     font_large = ImageFont.truetype(font_path, 70)
     font_medium = ImageFont.truetype(font_path, 40)
@@ -74,21 +74,23 @@ def generate_image(from_symbol, to_symbol, signal_type):
     pair_text = f"{from_symbol}/{to_symbol}"
     signal_text = signal_type
 
+    # Получаем размеры текста
     pair_text_width, pair_text_height = draw.textsize(pair_text, font=font_large)
     signal_text_width, signal_text_height = draw.textsize(signal_text, font=font_medium)
     
     total_text_height = pair_text_height + signal_text_height + 20
 
+    # Вычисляем положение для центрирования
     pair_text_x = (img.width - pair_text_width) // 2
     signal_text_x = (img.width - signal_text_width) // 2
     top_margin = (img.height - total_text_height) // 2
 
+    # Рисуем текст на изображении
     draw.text((pair_text_x, top_margin), pair_text, font=font_large, fill=(0, 0, 0))
-    draw.text((signal_text_x, top_margin + pair_text_height + 20), signal_text, font=font_medium, fill=(255, 0, 0) if signal_type == 'SHORT' else (0, 255, 0))
+    draw.text((signal_text_x, top_margin + pair_text_height + 20), signal_text, font=font_medium, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))
 
     image_path = f"/mnt/data/{from_symbol}_{to_symbol}_{signal_type}.png"
     img.save(image_path)
-
     return image_path
 
 def check_for_signal(df, from_symbol, to_symbol, timeframe):
@@ -130,11 +132,9 @@ async def notify_signals(bot, signal_message, image_path, chat_id, message_threa
     try:
         print(f"Отправка сообщения в чат {chat_id} с топиком {message_thread_id}")
         print(f"Сообщение: {signal_message}")
-
-        # Отправляем изображение и сообщение
-        with open(image_path, 'rb') as image_file:
-            await bot.send_photo(chat_id=chat_id, photo=image_file, caption=signal_message, message_thread_id=message_thread_id)
-        await asyncio.sleep(1)
+        
+        await bot.send_photo(chat_id=chat_id, photo=open(image_path, 'rb'), caption=signal_message, message_thread_id=message_thread_id)
+        await asyncio.sleep(1)  # Задержка перед следующим запросом
     except Exception as e:
         print(f"Ошибка при отправке сообщения: {e}")
 
