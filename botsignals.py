@@ -131,6 +131,13 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe], image_path
     return None, None, None, None, None
 
+def mirror_signal(signal_type):
+    """Функция для зеркалирования сигнала"""
+    if signal_type == 'LONG':
+        return 'SHORT'
+    elif signal_type == 'SHORT':
+        return 'LONG'
+
 async def notify_signals(bot, signal_message, image_path, chat_id, message_thread_id=None):
     try:
         print(f"Отправка сообщения в чат {chat_id} с топиком {message_thread_id}")
@@ -146,8 +153,8 @@ async def main():
     bot = Bot(token=token)
 
     channels_and_topics = [
-        {'chat_id': '-1002243376132', 'message_thread_id': '2'},
-        {'chat_id': '-1002290780268', 'message_thread_id': '4'},
+        {'chat_id': '-1002243376132', 'message_thread_id': '2'},  # Основной канал
+        {'chat_id': '-1002290780268', 'message_thread_id': '4'},  # Зеркальный канал
     ]
     
     currency_pairs = [
@@ -192,14 +199,29 @@ async def main():
                     if (last_signal['price'] is None or price_change >= price_threshold_percentage) and time_since_last_signal >= time_limit:
                         last_signals[signal_key] = {'price': current_price, 'signal_type': signal_type, 'time': time.time()}
 
-                        for channel in channels_and_topics:
-                            await notify_signals(
-                                bot,
-                                signal_message,
-                                image_path,
-                                chat_id=channel['chat_id'],
-                                message_thread_id=channel.get('message_thread_id')
-                            )
+                        # Отправляем сигнал в основной канал
+                        await notify_signals(
+                            bot,
+                            signal_message,
+                            image_path,
+                            chat_id=channels_and_topics[0]['chat_id'],
+                            message_thread_id=channels_and_topics[0].get('message_thread_id')
+                        )
+                        
+                        # Зеркальный сигнал для второго канала
+                        mirrored_signal_type = mirror_signal(signal_type)
+                        mirrored_image_path = generate_image(from_symbol, to_symbol, mirrored_signal_type)
+                        mirrored_signal_message = signal_message.replace(signal_type, mirrored_signal_type)
+
+                        # Отправляем зеркальный сигнал во второй канал
+                        await notify_signals(
+                            bot,
+                            mirrored_signal_message,
+                            mirrored_image_path,
+                            chat_id=channels_and_topics[1]['chat_id'],
+                            message_thread_id=channels_and_topics[1].get('message_thread_id')
+                        )
+
                         print(f"Отправлен сигнал {signal_type} для {from_symbol}/{to_symbol}, цена: {current_price}")
                     else:
                         print(f"Изменение цены для {from_symbol}/{to_symbol} недостаточно для отправки сигнала")
