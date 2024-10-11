@@ -26,50 +26,47 @@ from PIL import Image, ImageDraw, ImageFont
 from PIL import Image, ImageDraw, ImageFont
 
 def generate_image(from_symbol, to_symbol, signal_type):
-    # Размер изображения
-    width, height = 600, 400
-    img = Image.new('RGB', (width, height), color=(238, 224, 200))  # Бежевый цвет фона
-    draw = ImageDraw.Draw(img)
+    # Пример создания изображения
+    from PIL import Image, ImageDraw, ImageFont
 
-    # Попробуем использовать более крупный шрифт
-    font_path = "arial.ttf"  # Заменить на корректный путь к шрифту, если он доступен в системе
+    width, height = 800, 400
+    image = Image.new('RGB', (width, height), color=(255, 255, 255))
+    draw = ImageDraw.Draw(image)
 
-    try:
-        font_large = ImageFont.truetype(font_path, 450)  # Поменяй размер на подходящий
-        font_small = ImageFont.truetype(font_path, 400)
-    except IOError:
-        # Если шрифт не доступен, используем встроенный шрифт по умолчанию
-        font_large = ImageFont.load_default()
-        font_small = ImageFont.load_default()
+    # Задаем шрифты
+    font_large = ImageFont.truetype("arial.ttf", 50)  # Размер и тип шрифта
+    font_small = ImageFont.truetype("arial.ttf", 30)
 
-    # Тексты для пары валют и сигнала
-    text_large = f"{from_symbol}/{to_symbol}"
-    text_small = signal_type
+    # Текст для изображения
+    text_large = f"Сигнал: {signal_type}"
+    text_small = f"{from_symbol}/{to_symbol}"
 
     # Получаем размеры текста
-    text_large_width, text_large_height = draw.textsize(text_large, font=font_large)
-    text_small_width, text_small_height = draw.textsize(text_small, font=font_small)
+    text_large_bbox = draw.textbbox((0, 0), text_large, font=font_large)
+    text_large_width = text_large_bbox[2] - text_large_bbox[0]
+    text_large_height = text_large_bbox[3] - text_large_bbox[1]
 
-    # Позиции текста
-    position_large = ((width - text_large_width) // 2, (height - text_large_height) // 3)  # Центр текста для валютной пары
-    position_small = ((width - text_small_width) // 2, (height - text_small_height) // 1.5)  # Центр текста для LONG/SHORT
+    text_small_bbox = draw.textbbox((0, 0), text_small, font=font_small)
+    text_small_width = text_small_bbox[2] - text_small_bbox[0]
+    text_small_height = text_small_bbox[3] - text_small_bbox[1]
 
-    # Рисование текста на изображении
-    draw.text(position_large, text_large, font=font_large, fill=(0, 0, 0))  # Чёрный текст для валютной пары
-    draw.text(position_small, text_small, font=font_small, fill=(0, 255, 0) if signal_type == 'LONG' else (255, 0, 0))  # Цвет текста LONG/SHORT
+    # Координаты для размещения текста по центру
+    text_large_x = (width - text_large_width) // 2
+    text_large_y = (height - text_large_height) // 2 - 50
 
-    # Проверка и создание директории для сохранения
-    output_dir = "/mnt/data/"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    text_small_x = (width - text_small_width) // 2
+    text_small_y = text_large_y + text_large_height + 20
 
-    # Путь для сохранения изображения
-    image_path = os.path.join(output_dir, f"{from_symbol}_{to_symbol}_{signal_type}.png")
+    # Рисуем текст на изображении
+    draw.text((text_large_x, text_large_y), text_large, font=font_large, fill=(0, 0, 0))
+    draw.text((text_small_x, text_small_y), text_small, font=font_small, fill=(0, 0, 0))
 
     # Сохранение изображения
-    img.save(image_path)
+    image_path = f"{from_symbol}_{to_symbol}_{signal_type}.png"
+    image.save(image_path)
 
     return image_path
+
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
     url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
