@@ -25,17 +25,25 @@ from PIL import Image, ImageDraw, ImageFont
 
 from PIL import Image, ImageDraw, ImageFont
 
-def generate_image(from_symbol, to_symbol, signal_type):
-    # Пример создания изображения
-    from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
+import os
 
+def generate_image(from_symbol, to_symbol, signal_type):
     width, height = 800, 400
     image = Image.new('RGB', (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
 
-    # Задаем шрифты
-    font_large = ImageFont.truetype("arial.ttf", 50)  # Размер и тип шрифта
-    font_small = ImageFont.truetype("arial.ttf", 30)
+    # Путь к файлу шрифта
+    font_path = os.path.join('fonts', 'arial_black.ttf')
+
+    # Загружаем шрифт
+    try:
+        font_large = ImageFont.truetype(font_path, 100)
+        font_small = ImageFont.truetype(font_path, 80)
+    except OSError:
+        print("Не удалось загрузить шрифт. Используем шрифт по умолчанию.")
+        font_large = ImageFont.load_default()
+        font_small = ImageFont.load_default()
 
     # Текст для изображения
     text_large = f"Сигнал: {signal_type}"
@@ -66,6 +74,7 @@ def generate_image(from_symbol, to_symbol, signal_type):
     image.save(image_path)
 
     return image_path
+
 
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
