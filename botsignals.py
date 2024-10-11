@@ -29,25 +29,26 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 
 def generate_image(from_symbol, to_symbol, signal_type):
-    width, height = 600, 300
+    # Размеры изображения
+    width, height = 800, 500
     image = Image.new('RGB', (width, height), color=(245, 245, 220))  # Бежевый фон
     draw = ImageDraw.Draw(image)
 
-    # Путь к файлу шрифта
-    font_path = os.path.join('fonts', 'arial_black.ttf')
+    # Путь к файлу шрифта Roboto-Bold
+    font_path = os.path.join('fonts', 'Roboto-Bold.ttf')  # Путь к шрифту Roboto-Bold
 
-    # Загружаем шрифт
+    # Загружаем шрифт Roboto-Bold
     try:
-        font_large = ImageFont.truetype(font_path, 1000)
-        font_small = ImageFont.truetype(font_path, 800)
+        font_large = ImageFont.truetype(font_path, 180)  # Очень крупный шрифт для валютной пары
+        font_small = ImageFont.truetype(font_path, 150)  # Очень крупный шрифт для сигнала
     except OSError:
         print("Не удалось загрузить шрифт. Используем шрифт по умолчанию.")
         font_large = ImageFont.load_default()
         font_small = ImageFont.load_default()
 
     # Текст для изображения
-    text_large = f"Сигнал: {signal_type}"
-    text_small = f"{from_symbol}/{to_symbol}"
+    text_large = f"{from_symbol}/{to_symbol}"
+    text_signal = signal_type
 
     # Определение цвета для LONG/SHORT
     if signal_type == 'LONG':
@@ -60,20 +61,20 @@ def generate_image(from_symbol, to_symbol, signal_type):
     text_large_width = text_large_bbox[2] - text_large_bbox[0]
     text_large_height = text_large_bbox[3] - text_large_bbox[1]
 
-    text_small_bbox = draw.textbbox((0, 0), text_small, font=font_small)
-    text_small_width = text_small_bbox[2] - text_small_bbox[0]
-    text_small_height = text_small_bbox[3] - text_small_bbox[1]
+    text_signal_bbox = draw.textbbox((0, 0), text_signal, font=font_small)
+    text_signal_width = text_signal_bbox[2] - text_signal_bbox[0]
+    text_signal_height = text_signal_bbox[3] - text_signal_bbox[1]
 
     # Координаты для размещения текста по центру
     text_large_x = (width - text_large_width) // 2
-    text_large_y = (height - text_large_height) // 2 - 50
+    text_large_y = (height - text_large_height) // 2 - 100
 
-    text_small_x = (width - text_small_width) // 2
-    text_small_y = text_large_y + text_large_height + 20
+    text_signal_x = (width - text_signal_width) // 2
+    text_signal_y = text_large_y + text_large_height + 50
 
     # Рисуем текст на изображении
-    draw.text((text_large_x, text_large_y), text_large, font=font_large, fill=(0, 0, 0))
-    draw.text((text_small_x, text_small_y), text_small, font=font_small, fill=(0, 0, 0))
+    draw.text((text_large_x, text_large_y), text_large, font=font_large, fill=(0, 0, 0))  # Валютная пара черным
+    draw.text((text_signal_x, text_signal_y), text_signal, font=font_small, fill=text_color)  # Сигнал LONG/SHORT
 
     # Сохранение изображения
     image_path = f"{from_symbol}_{to_symbol}_{signal_type}.png"
