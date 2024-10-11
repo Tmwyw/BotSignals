@@ -30,7 +30,7 @@ import os
 
 def generate_image(from_symbol, to_symbol, signal_type):
     # Размеры изображения
-    width, height = 800, 500
+    width, height = 512, 512
     image = Image.new('RGB', (width, height), color=(245, 245, 220))  # Бежевый фон
     draw = ImageDraw.Draw(image)
 
@@ -39,8 +39,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
 
     # Загружаем шрифт Roboto-Bold
     try:
-        font_large = ImageFont.truetype(font_path, 180)  # Очень крупный шрифт для валютной пары
-        font_small = ImageFont.truetype(font_path, 150)  # Очень крупный шрифт для сигнала
+        font_large = ImageFont.truetype(font_path, 200)  # Очень крупный шрифт для валютной пары
+        font_small = ImageFont.truetype(font_path, 180)  # Очень крупный шрифт для сигнала
     except OSError:
         print("Не удалось загрузить шрифт. Используем шрифт по умолчанию.")
         font_large = ImageFont.load_default()
