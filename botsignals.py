@@ -29,8 +29,8 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 
 def generate_image(from_symbol, to_symbol, signal_type):
-    width, height = 800, 400
-    image = Image.new('RGB', (width, height), color=(255, 255, 255))
+    width, height = 600, 300
+    image = Image.new('RGB', (width, height), color=(245, 245, 220))  # Бежевый фон
     draw = ImageDraw.Draw(image)
 
     # Путь к файлу шрифта
@@ -38,8 +38,8 @@ def generate_image(from_symbol, to_symbol, signal_type):
 
     # Загружаем шрифт
     try:
-        font_large = ImageFont.truetype(font_path, 100)
-        font_small = ImageFont.truetype(font_path, 80)
+        font_large = ImageFont.truetype(font_path, 1000)
+        font_small = ImageFont.truetype(font_path, 800)
     except OSError:
         print("Не удалось загрузить шрифт. Используем шрифт по умолчанию.")
         font_large = ImageFont.load_default()
@@ -48,6 +48,12 @@ def generate_image(from_symbol, to_symbol, signal_type):
     # Текст для изображения
     text_large = f"Сигнал: {signal_type}"
     text_small = f"{from_symbol}/{to_symbol}"
+
+    # Определение цвета для LONG/SHORT
+    if signal_type == 'LONG':
+        text_color = (0, 255, 0)  # Зеленый для LONG
+    else:
+        text_color = (255, 0, 0)  # Красный для SHORT
 
     # Получаем размеры текста
     text_large_bbox = draw.textbbox((0, 0), text_large, font=font_large)
