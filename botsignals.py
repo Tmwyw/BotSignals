@@ -64,7 +64,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     long_ma = latest_data['Long_MA']
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
-    risk_assessment = random.choice([1, 2])
+    risk_assessment = random.choice([1, 2, 3])  # Увеличено до 3 для добавления нового уровня
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
 
     if short_ma > long_ma:
@@ -92,9 +92,10 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
 def mirror_signal(signal_type):
     """Функция для зеркалирования сигнала"""
     if signal_type == 'LONG':
-        return 'SHORT'
+        return 'SHORT', '🔴'  # Возвращаем тип сигнала и смайлик
     elif signal_type == 'SHORT':
-        return 'LONG'
+        return 'LONG', '🟢'  # Возвращаем тип сигнала и смайлик
+    return None, None  # Если сигнал не определен
 
 async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
     try:
@@ -168,8 +169,8 @@ async def main():
                         )
                         
                         # Зеркальный сигнал для второго канала
-                        mirrored_signal_type = mirror_signal(signal_type)
-                        mirrored_signal_message = signal_message.replace(signal_type, mirrored_signal_type)
+                        mirrored_signal_type, mirrored_emoji = mirror_signal(signal_type)
+                        mirrored_signal_message = signal_message.replace(signal_type, mirrored_signal_type).replace('🟢', mirrored_emoji).replace('🔴', mirrored_emoji)
 
                         # Отправляем зеркальный сигнал во второй канал
                         await notify_signals(
