@@ -128,6 +128,8 @@ async def main():
     ]
 
     api_keys_cycle = cycle(API_KEYS)
+    
+    first_cycle = True
 
     while True:
         for from_symbol, to_symbol in currency_pairs:
@@ -157,7 +159,11 @@ async def main():
                     price_change = abs((current_price - last_signal['price']) / last_signal['price']) if last_signal['price'] else None
                     time_since_last_signal = time.time() - last_signal['time']
 
-                    if (last_signal['price'] is None or price_change >= price_threshold_percentage) and time_since_last_signal >= time_limit:
+                    if first_cycle:
+                        # На первом цикле обновляем историю сигналов, но не отправляем
+                        last_signals[signal_key] = {'price': current_price, 'signal_type': signal_type, 'time': time.time()}
+                        print(f"Первый цикл, сигнал не отправлен для {from_symbol}/{to_symbol}")
+                    elif (last_signal['price'] is None or price_change >= price_threshold_percentage) and time_since_last_signal >= time_limit:
                         last_signals[signal_key] = {'price': current_price, 'signal_type': signal_type, 'time': time.time()}
 
                         # Отправляем сигнал в основной канал
