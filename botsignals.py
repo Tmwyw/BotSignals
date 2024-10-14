@@ -118,13 +118,14 @@ async def main():
     
     # Добавлены новые валютные пары из изображения
     currency_pairs = [
-    ('EUR', 'USD'),  # EUR/USD (OTC)
-    ('GBP', 'USD'),  # GBP/USD (OTC)
-    ('EUR', 'GBP'),  # EUR/GBP (OTC)
-    ('EUR', 'JPY'),  # EUR/JPY (OTC)
-    ('AUD', 'CAD'),  # AUD/CAD (OTC)
-    ('USD', 'CHF'),  # USD/CHF (OTC)
-    ('USD', 'JPY'),  # USD/JPY (OTC)
+    ('USD', 'JPY'),  # USD/JPY
+    ('EUR', 'GBP'),  # EUR/GBP
+    ('USD', 'CAD'),  # USD/CAD
+    ('EUR', 'USD'),  # EUR/USD
+    ('GBP', 'USD'),  # GBP/USD
+    ('EUR', 'JPY'),  # EUR/JPY
+    ('GBP', 'JPY'),  # GBP/JPY
+    ('AUD', 'USD')   # AUD/USD
     ]
 
     api_keys_cycle = cycle(API_KEYS)
