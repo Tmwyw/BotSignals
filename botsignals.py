@@ -14,7 +14,7 @@ last_signals = {}
 
 # Тайм лимит для отправки сигналов (10 минут = 600 секунд)
 time_limit = 600  # Время в секундах между отправкой сигналов для одной валютной пары
-price_threshold_percentage = 0.001  # Порог изменения цены 0.2%
+price_threshold_percentage = 0.002  # Порог изменения цены 0.2%
 
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
@@ -191,7 +191,11 @@ async def main():
                     else:
                         print(f"Изменение цены для {from_symbol}/{to_symbol} недостаточно для отправки сигнала")
 
-            await asyncio.sleep(5)
+             # В конце первого цикла снимаем флаг
+        if first_cycle:
+            first_cycle = False
+
+        await asyncio.sleep(5)
 
 if __name__ == '__main__':
     asyncio.run(main())
