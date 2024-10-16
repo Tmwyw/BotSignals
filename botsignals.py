@@ -108,7 +108,7 @@ async def notify_signals(bot, signal_message, chat_id, message_thread_id=None):
         print(f"Ошибка при отправке сообщения: {e}")
 
 async def main():
-    token = '7449818362:AAHrejKv90PyRkrgMTdZvHzT9p44ePlZYcg'
+    token = '7919933622:AAHuzQ352h-YdJ72--hJqRzv97byLcnOxa4'
     bot = Bot(token=token)
 
     channels_and_topics = [
