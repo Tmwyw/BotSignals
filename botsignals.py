@@ -73,11 +73,14 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     long_ma = latest_data['Long_MA']
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
-    risk_assessment = random.choice([1, 2, 3])  # Увеличено до 3 для добавления нового уровня
-    risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
-    analyst_message = f"👩‍💻Аналитик - {analyst}"
+    # Рандомно выбираем оценку риска и аналитика
+    risk_assessment = random.choice([1, 2, 3])  
     analyst = random.choice(analysts)  # Выбор аналитика
 
+    risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
+    analyst_message = f"👩‍💻Аналитик - {analyst}"
+
+    print(f"Проверяем сигнал для {pair_symbol} на {timeframe}: цена={current_price}, S/MA={short_ma:.4f}, L/MA={long_ma:.4f}")
 
     if short_ma > long_ma:
         signal_message = (f"📊 Данные получены:\n"
@@ -87,7 +90,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"➖➖➖➖➖➖➖➖➖➖\n"
                           f"💰{pair_symbol}💰\n\n"
                           f"🟢LONG🟢\n\n"
-                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}\n\n"
                           f"{analyst_message}")
         return 'LONG', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     elif short_ma < long_ma:
@@ -98,10 +101,11 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"➖➖➖➖➖➖➖➖➖➖\n"
                           f"💰{pair_symbol}💰\n\n"
                           f"🔴SHORT🔴\n\n"
-                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}"
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}\n\n"
                           f"{analyst_message}")
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     return None, None, None, None
+
 
 def mirror_signal(signal_type):
     """Функция для зеркалирования сигнала"""
