@@ -76,6 +76,8 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     risk_assessment = random.choice([1, 2, 3])  # Увеличено до 3 для добавления нового уровня
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
     analyst_message = f"👩‍💻Аналитик - {analyst}"
+    analyst = random.choice(analysts)  # Выбор аналитика
+
 
     if short_ma > long_ma:
         signal_message = (f"📊 Данные получены:\n"
