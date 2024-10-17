@@ -19,6 +19,15 @@ price_threshold_percentage = 0.004  # Порог изменения цены 0.2
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
+# Список аналитиков
+analysts = [
+    "TATIANA BONDAR",
+    "SERGEY KYLIK",
+    "IVAN KOLTSOV",
+    "ALEKSEY MARESYEV",
+    "ALEKSANDR PETROV"
+]
+
 async def get_currency_data(from_symbol, to_symbol, api_key):
     url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
     response = requests.get(url)
@@ -66,6 +75,7 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
 
     risk_assessment = random.choice([1, 2, 3])  # Увеличено до 3 для добавления нового уровня
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
+    analyst_message = f"👩‍💻Аналитик - {analyst}"
 
     if short_ma > long_ma:
         signal_message = (f"📊 Данные получены:\n"
@@ -75,7 +85,8 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"➖➖➖➖➖➖➖➖➖➖\n"
                           f"💰{pair_symbol}💰\n\n"
                           f"🟢LONG🟢\n\n"
-                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}"
+                          f"{analyst_message}")
         return 'LONG', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     elif short_ma < long_ma:
         signal_message = (f"📊 Данные получены:\n"
@@ -85,7 +96,8 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
                           f"➖➖➖➖➖➖➖➖➖➖\n"
                           f"💰{pair_symbol}💰\n\n"
                           f"🔴SHORT🔴\n\n"
-                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}")
+                          f"⌛️ВРЕМЯ СДЕЛКИ: {timeframe}"
+                          f"{analyst_message}")
         return 'SHORT', current_price, signal_message, abs(short_ma - long_ma) * timeframes[timeframe]
     return None, None, None, None
 
