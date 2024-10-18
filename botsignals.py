@@ -14,19 +14,11 @@ last_signals = {}
 
 # Тайм лимит для отправки сигналов (10 минут = 600 секунд)
 time_limit = 600  # Время в секундах между отправкой сигналов для одной валютной пары
-price_threshold_percentage = 0.004  # Порог изменения цены 0.2%
+price_threshold_percentage = 0.0035  # Порог изменения цены 0.2%
 
 # Приоритет таймфреймов (вес для каждого таймфрейма)
 timeframes = {'1M': 1, '2M': 1.5, '3M': 2, '5M': 2.5}
 
-# Список аналитиков
-analysts = [
-    "TATIANA BONDAR",
-    "SERGEY KYLIK",
-    "IVAN KOLTSOV",
-    "ALEKSEY MARESYEV",
-    "ALEKSANDR PETROV"
-]
 
 async def get_currency_data(from_symbol, to_symbol, api_key):
     url = f'https://www.alphavantage.co/query?function=FX_DAILY&from_symbol={from_symbol}&to_symbol={to_symbol}&entitlement=realtime&apikey={api_key}'
@@ -73,15 +65,26 @@ def check_for_signal(df, from_symbol, to_symbol, timeframe):
     long_ma = latest_data['Long_MA']
     pair_symbol = f"{from_symbol}/{to_symbol}"
 
-    # Рандомно выбираем оценку риска и аналитика
-    risk_assessment = random.choice([1, 2, 3])  
-    analyst = random.choice(analysts)  # Выбор аналитика
+    # Списки аналитиков
+    male_analysts = ["SERGEY KYLIK", "IVAN KOLTSOV", "ALEKSEY MARESYEV", "ALEKSANDR PETROV"]
+    female_analysts = ["TATIANA BONDAR"]
 
+    # Рандомный выбор аналитика
+    analyst = random.choice(male_analysts + female_analysts)
+
+    # Определяем смайлик в зависимости от аналитика
+    if analyst in female_analysts:
+        analyst_message = f"👩‍💻 Аналитик - {analyst}"
+    else:
+        analyst_message = f"👨‍💻 Аналитик - {analyst}"
+
+    # Рандомно выбираем оценку риска
+    risk_assessment = random.choice([1, 2, 3])
     risk_message = f"☑️ Присвоена оценка риска - {risk_assessment}️⃣"
-    analyst_message = f"👩‍💻Аналитик - {analyst}"
 
     print(f"Проверяем сигнал для {pair_symbol} на {timeframe}: цена={current_price}, S/MA={short_ma:.4f}, L/MA={long_ma:.4f}")
 
+    # Формируем сигнал
     if short_ma > long_ma:
         signal_message = (f"📊 Данные получены:\n"
                           f"⚙️ Скользящие рассчитаны\n"
